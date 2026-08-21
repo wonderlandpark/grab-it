@@ -50,3 +50,5 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
+            NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=${{ vars.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID }}
+            NEXT_PUBLIC_NAVER_MAP_STYLE_ID=${{ vars.NEXT_PUBLIC_NAVER_MAP_STYLE_ID }}
