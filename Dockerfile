@@ -18,6 +18,8 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN corepack enable
+COPY --from=base /app/node_modules/prisma ./node_modules/prisma
+COPY --from=base /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
