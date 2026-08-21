@@ -50,13 +50,3 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
-
-      - name: Build and Push Migration Image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: development
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:migrate
-          cache-from: type=gha,scope=migrate
-          cache-to: type=gha,mode=max,scope=migrate
