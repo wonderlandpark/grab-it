@@ -1,12 +1,18 @@
 import Head from 'next/head'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { SignInButton } from '@/components/auth/SignInButton'
 import { ActivityPicker } from '@/components/experience/ActivityPicker'
 import { EmotionPicker } from '@/components/experience/EmotionPicker'
 import { AppShell } from '@/components/layout/AppShell'
+import dynamic from 'next/dynamic'
 import type { ActivityValue, EmotionValue, PlaceSearchResult } from '@/types/domain'
+
+const LocationPickerMap = dynamic(
+	() => import('@/components/experience/LocationPickerMap'),
+	{ ssr: false },
+)
 
 const defaultLocation = { latitude: 37.5666, longitude: 126.9784 }
 
@@ -17,6 +23,7 @@ export default function NewExperiencePage() {
 	const [locationLabel, setLocationLabel] = useState('서울시청 주변')
 	const [placeQuery, setPlaceQuery] = useState('')
 	const [places, setPlaces] = useState<PlaceSearchResult[]>([])
+	const [searched, setSearched] = useState(false)
 	const [place, setPlace] = useState<PlaceSearchResult | null>(null)
 	const [activity, setActivity] = useState<ActivityValue>('WALK')
 	const [selectedEmotions, setSelectedEmotions] = useState<EmotionValue[]>([])
@@ -25,6 +32,32 @@ export default function NewExperiencePage() {
 	const [images, setImages] = useState<File[]>([])
 	const [loading, setLoading] = useState(false)
 	const [message, setMessage] = useState('')
+	const searchBoxRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+			const target = event.target as Node | null
+			if (!searchBoxRef.current || !target) return
+			if (!searchBoxRef.current.contains(target)) {
+				setPlaces([])
+				setSearched(false)
+			}
+		}
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				setPlaces([])
+				setSearched(false)
+			}
+		}
+		document.addEventListener('mousedown', handlePointerDown)
+		document.addEventListener('touchstart', handlePointerDown)
+		document.addEventListener('keydown', handleEscape)
+		return () => {
+			document.removeEventListener('mousedown', handlePointerDown)
+			document.removeEventListener('touchstart', handlePointerDown)
+			document.removeEventListener('keydown', handleEscape)
+		}
+	}, [])
 
 	useEffect(() => {
 		if (!navigator.geolocation) return
@@ -41,13 +74,17 @@ export default function NewExperiencePage() {
 	async function searchPlace() {
 		if (!placeQuery.trim()) return
 		setMessage('')
+		setSearched(false)
 		const response = await fetch(`/api/places/search?q=${encodeURIComponent(placeQuery)}`)
 		const data = await response.json()
 		if (!response.ok) {
 			setMessage(data.error ?? '장소를 검색하지 못했습니다')
+			setPlaces([])
+			setSearched(true)
 			return
 		}
 		setPlaces(data.places ?? [])
+		setSearched(true)
 	}
 
 	function selectPlace(result: PlaceSearchResult) {
@@ -55,6 +92,15 @@ export default function NewExperiencePage() {
 		setLocation({ latitude: result.latitude, longitude: result.longitude })
 		setLocationLabel(result.name)
 		setPlaces([])
+		setSearched(false)
+	}
+
+	function pickLocation(point: { latitude: number; longitude: number }) {
+		setLocation(point)
+		if (place) {
+			setPlace(null)
+		}
+		setLocationLabel('지도에서 직접 지정한 위치')
 	}
 
 	async function submit(event: FormEvent) {
@@ -133,19 +179,24 @@ export default function NewExperiencePage() {
 				<div className='mt-7 grid gap-5'>
 					<section className='rounded-3xl bg-white p-5 shadow-sm'>
 						<label className='text-sm font-semibold'>1. 장소와 위치</label>
-						<div className='mt-3 flex gap-2'>
+						<div ref={searchBoxRef} className='relative mt-3 flex gap-2'>
 							<input
 								value={placeQuery}
 								onChange={(event) => setPlaceQuery(event.target.value)}
-								placeholder='런던베이글, 서울숲처럼 검색'
+								onKeyDown={(event) => {
+									if (event.key === 'Enter') {
+										event.preventDefault()
+										searchPlace()
+									}
+								}}
+								placeholder='ex) 서울대입구역'
 								className='min-w-0 flex-1 rounded-2xl border border-black/10 px-4 py-3'
 							/>
 							<button type='button' onClick={searchPlace} className='rounded-2xl bg-ink px-4 text-white'>
 								검색
 							</button>
-						</div>
-						{places.length ? (
-							<div className='mt-2 overflow-hidden rounded-2xl border border-black/10'>
+							{places.length > 0 ? (
+								<div className='absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-black/10 bg-white shadow-lg shadow-black/10'>
 								{places.map((result) => (
 									<button
 										key={result.id}
@@ -157,8 +208,20 @@ export default function NewExperiencePage() {
 										<span className='text-xs text-ink/50'>{result.roadAddress ?? result.address}</span>
 									</button>
 								))}
-							</div>
-						) : null}
+								</div>
+							) : searched ? (
+								<div className='absolute left-0 right-0 top-full z-20 mt-1 rounded-2xl border border-black/10 bg-white px-4 py-6 text-center shadow-lg shadow-black/10'>
+									<p className='text-sm font-semibold text-ink/70'>검색 결과가 없습니다</p>
+									<p className='mt-1 text-xs text-ink/40'>다른 이름이나 주소로 다시 검색해 보세요.</p>
+								</div>
+							) : null}
+						</div>
+						<div className='mt-4'>
+							<LocationPickerMap value={location} onChange={pickLocation} />
+							<p className='mt-2 text-xs text-ink/50'>
+								지도를 움직여 가운데 핀을 원하는 위치에 맞춰 주세요.
+							</p>
+						</div>
 						<div className='mt-3 rounded-2xl bg-mist/60 p-4 text-sm'>
 							<strong>{locationLabel}</strong>
 							<p className='mt-1 font-mono text-xs text-ink/55'>

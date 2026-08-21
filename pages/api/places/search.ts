@@ -21,36 +21,6 @@ interface NaverItem {
 	mapy: string
 }
 
-const demoPlaces = [
-	{
-		id: 'demo-london-bagel-anguk',
-		name: '런던베이글뮤지엄 안국점',
-		category: '카페, 베이커리',
-		address: '서울특별시 종로구 계동 102-1',
-		roadAddress: '서울특별시 종로구 북촌로4길 20',
-		latitude: 37.5792,
-		longitude: 126.9862,
-	},
-	{
-		id: 'demo-seoul-forest',
-		name: '서울숲',
-		category: '도시공원',
-		address: '서울특별시 성동구 성수동1가 685-20',
-		roadAddress: '서울특별시 성동구 뚝섬로 273',
-		latitude: 37.5444,
-		longitude: 127.0374,
-	},
-	{
-		id: 'demo-nodeul-island',
-		name: '노들섬',
-		category: '문화공간',
-		address: '서울특별시 용산구 이촌동 302-146',
-		roadAddress: '서울특별시 용산구 양녕로 445',
-		latitude: 37.5177,
-		longitude: 126.958,
-	},
-]
-
 function cleanTitle(value: string) {
 	return value.replace(/<[^>]+>/g, '').replaceAll('&amp;', '&')
 }
@@ -70,26 +40,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const clientId = process.env.NAVER_SEARCH_CLIENT_ID
 		const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET
 		if (!clientId || !clientSecret) {
-			const normalized = query.toLowerCase().replaceAll(' ', '')
-			const matches = demoPlaces.filter((place) =>
-				`${place.name}${place.category}${place.address}`
-					.toLowerCase()
-					.replaceAll(' ', '')
-					.includes(normalized),
-			)
-			res.status(200).json({ places: matches.length ? matches : demoPlaces })
-			return
+			throw new ApiError(503, '장소 검색 API 키가 설정되지 않았습니다. NAVER_SEARCH_CLIENT_ID/SECRET을 확인해 주세요.')
 		}
 
-		const url = new URL('https://openapi.naver.com/v1/search/local.json')
+		const url = new URL('https://naverapihub.apigw.ntruss.com/search/v1/local')
 		url.searchParams.set('query', query)
-		url.searchParams.set('display', '5')
+		url.searchParams.set('display', '10')
 		url.searchParams.set('start', '1')
 		url.searchParams.set('sort', 'random')
 		const response = await fetch(url, {
 			headers: {
-				'X-Naver-Client-Id': clientId,
-				'X-Naver-Client-Secret': clientSecret,
+				'X-NCP-APIGW-API-KEY-ID': clientId,
+				'X-NCP-APIGW-API-KEY': clientSecret,
 			},
 			signal: AbortSignal.timeout(5_000),
 		})

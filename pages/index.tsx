@@ -31,6 +31,9 @@ export default function DiscoveryPage() {
 	const [viewport, setViewport] = useState<MapViewport>(INITIAL_VIEWPORT)
 	const [userLocation, setUserLocation] = useState<MapPoint | null>(null)
 	const [locationMessage, setLocationMessage] = useState('')
+	const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
+		'idle',
+	)
 	const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('loading')
 	const [retryToken, setRetryToken] = useState(0)
 
@@ -86,8 +89,11 @@ export default function DiscoveryPage() {
 	}, [retryToken, selectedEmotions, viewport])
 
 	const findCurrentLocation = () => {
+		if (locationStatus === 'loading') return
+		setLocationStatus('loading')
 		setLocationMessage('현재 위치를 찾고 있어요.')
 		if (!navigator.geolocation) {
+			setLocationStatus('error')
 			setLocationMessage('이 브라우저에서는 위치 찾기를 사용할 수 없어요.')
 			return
 		}
@@ -105,9 +111,13 @@ export default function DiscoveryPage() {
 					east: point.longitude + 0.12,
 					north: point.latitude + 0.085,
 				})
+				setLocationStatus('success')
 				setLocationMessage('현재 위치로 이동했어요.')
 			},
-			() => setLocationMessage('위치 권한을 허용하면 내 주변 경험을 볼 수 있어요.'),
+			() => {
+				setLocationStatus('error')
+				setLocationMessage('위치 권한을 허용하면 내 주변 경험을 볼 수 있어요.')
+			},
 			{ enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
 		)
 	}
@@ -171,20 +181,34 @@ export default function DiscoveryPage() {
 						</div>
 					</div>
 
-					<div className="absolute right-4 top-40 z-30 flex flex-col gap-2 lg:right-5 lg:top-5">
+					<div className="absolute right-4 top-40 z-30 flex flex-col items-end gap-2 lg:right-5 lg:top-5">
 						<button
 							type="button"
 							onClick={findCurrentLocation}
 							aria-label="현재 위치로 이동"
-							className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-ink shadow-lg backdrop-blur transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/40 focus:ring-offset-2"
+							aria-busy={locationStatus === 'loading'}
+							disabled={locationStatus === 'loading'}
+							className="flex h-11 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/95 px-4 text-sm font-bold text-ink shadow-lg backdrop-blur transition hover:bg-white disabled:cursor-wait disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-leaf/40 focus:ring-offset-2"
 						>
-							<span aria-hidden="true">◎</span>
+							<span
+								aria-hidden="true"
+								className={locationStatus === 'loading' ? 'animate-pulse' : ''}
+							>
+								◎
+							</span>
+							{locationStatus === 'loading' ? '찾는 중' : '내 위치'}
 						</button>
+						{locationStatus !== 'idle' && locationMessage ? (
+							<p
+								className={`max-w-64 rounded-xl bg-white/95 px-3 py-2 text-xs font-semibold shadow-lg backdrop-blur ${
+									locationStatus === 'error' ? 'text-coral' : 'text-slate-600'
+								}`}
+								aria-live="polite"
+							>
+								{locationMessage}
+							</p>
+						) : null}
 					</div>
-
-					<p className="sr-only" aria-live="polite">
-						{locationMessage}
-					</p>
 
 					{status === 'loading' && experiences.length > 0 ? (
 						<div

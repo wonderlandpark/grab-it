@@ -21,81 +21,42 @@ interface MapCanvasProps {
 	onViewportChange: (viewport: MapViewport) => void
 }
 
-interface NaverCoordinate {
-	lat: () => number
-	lng: () => number
-}
-
-interface NaverBounds {
-	getSW: () => NaverCoordinate
-	getNE: () => NaverCoordinate
-}
-
-interface NaverMapInstance {
-	getBounds: () => NaverBounds
-	setCenter: (coordinate: unknown) => void
-	setMapTypeId: (mapTypeId: string) => void
-	destroy?: () => void
-}
-
-interface NaverMarkerInstance {
-	setMap: (map: NaverMapInstance | null) => void
-}
-
-interface NaverEventListener {
-	listener: unknown
-}
-
-interface NaverMapsApi {
-	Map: new (element: HTMLElement, options: Record<string, unknown>) => NaverMapInstance
-	LatLng: new (latitude: number, longitude: number) => unknown
-	Point: new (x: number, y: number) => unknown
-	Marker: new (options: Record<string, unknown>) => NaverMarkerInstance
-	MapTypeRegistry: new (mapTypes: Record<string, unknown>) => unknown
-	NaverStyleMapTypeOptions: { getVectorMap: () => unknown }
-	MapTypeId: { NORMAL: string }
-	Event: {
-		addListener: (
-			target: NaverMapInstance | NaverMarkerInstance,
-			eventName: string,
-			listener: () => void,
-		) => NaverEventListener
-		removeListener: (listener: NaverEventListener) => void
-	}
-}
-
-declare global {
-	interface Window {
-		naver?: { maps: NaverMapsApi }
-	}
-}
-
 const NAVER_SCRIPT_ID = 'naver-maps-sdk'
 const SEOUL_CENTER = { latitude: 37.5665, longitude: 126.978 }
 
 let sdkPromise: Promise<NaverMapsApi> | null = null
 
 function loadNaverMaps(clientId: string): Promise<NaverMapsApi> {
-	if (window.naver?.maps) return Promise.resolve(window.naver.maps)
+	if (window.naver?.maps.jsContentLoaded) return Promise.resolve(window.naver.maps)
 	if (sdkPromise) return sdkPromise
 
 	sdkPromise = new Promise((resolve, reject) => {
 		const existing = document.getElementById(NAVER_SCRIPT_ID) as HTMLScriptElement | null
 		const script = existing ?? document.createElement('script')
 
-		const handleLoad = () => {
-			if (window.naver?.maps) resolve(window.naver.maps)
-			else reject(new Error('네이버 지도 SDK를 초기화하지 못했습니다.'))
+		const resolveWhenReady = () => {
+			const maps = window.naver?.maps
+			if (!maps) {
+				reject(new Error('네이버 지도 SDK를 초기화하지 못했습니다.'))
+				return
+			}
+			if (maps.jsContentLoaded) {
+				resolve(maps)
+				return
+			}
+			maps.onJSContentLoaded = () => resolve(maps)
 		}
 		const handleError = () => reject(new Error('네이버 지도 SDK를 불러오지 못했습니다.'))
 
-		script.addEventListener('load', handleLoad, { once: true })
+		script.addEventListener('load', resolveWhenReady, { once: true })
 		script.addEventListener('error', handleError, { once: true })
 
-		if (!existing) {
+		if (existing && window.naver?.maps) {
+			resolveWhenReady()
+		} else if (!existing) {
 			script.id = NAVER_SCRIPT_ID
 			script.async = true
-			script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(clientId)}`
+			script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(clientId)}&submodules=gl`
 			document.head.appendChild(script)
 		}
 	})
@@ -135,13 +96,16 @@ function NaverMap({
 	const markersRef = useRef<NaverMarkerInstance[]>([])
 	const currentLocationMarkerRef = useRef<NaverMarkerInstance | null>(null)
 	const [failed, setFailed] = useState(false)
+	const [mapReady, setMapReady] = useState(false)
 
 	useEffect(() => {
 		const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+		const customStyleId = process.env.NEXT_PUBLIC_NAVER_MAP_STYLE_ID
 		if (!clientId || !containerRef.current) return
 
 		let cancelled = false
 		let idleListener: NaverEventListener | null = null
+		setMapReady(false)
 
 		loadNaverMaps(clientId)
 			.then((maps) => {
@@ -150,17 +114,18 @@ function NaverMap({
 				const map = new maps.Map(containerRef.current, {
 					center: new maps.LatLng(SEOUL_CENTER.latitude, SEOUL_CENTER.longitude),
 					zoom: 12,
-					mapTypeId: maps.MapTypeId.NORMAL,
-					mapTypes: new maps.MapTypeRegistry({
-						normal: maps.NaverStyleMapTypeOptions.getVectorMap(),
-					}),
+					gl: true,
+					...(customStyleId
+						? { customStyleId }
+						: { mapTypeId: maps.MapTypeId.NORMAL }),
 					zoomControl: false,
 					mapDataControl: false,
-					logoControlOptions: { position: 7 },
+					logoControlOptions: { position: 6 },
 				})
-				map.setMapTypeId(maps.MapTypeId.NORMAL)
+				if (!customStyleId) map.setMapTypeId(maps.MapTypeId.NORMAL)
 				mapRef.current = map
 				apiRef.current = maps
+				setMapReady(true)
 
 				const publishViewport = () => {
 					const bounds = map.getBounds()
@@ -183,6 +148,7 @@ function NaverMap({
 
 		return () => {
 			cancelled = true
+			setMapReady(false)
 			if (idleListener && apiRef.current) apiRef.current.Event.removeListener(idleListener)
 			mapRef.current?.destroy?.()
 			mapRef.current = null
@@ -219,10 +185,11 @@ function NaverMap({
 	useEffect(() => {
 		const map = mapRef.current
 		const maps = apiRef.current
-		if (!map || !maps || !userLocation) return
+		if (!mapReady || !map || !maps || !userLocation) return
 
 		const coordinate = new maps.LatLng(userLocation.latitude, userLocation.longitude)
 		map.setCenter(coordinate)
+		map.setZoom(15)
 		currentLocationMarkerRef.current?.setMap(null)
 		currentLocationMarkerRef.current = new maps.Marker({
 			map,
@@ -234,7 +201,7 @@ function NaverMap({
 			},
 			zIndex: 200,
 		})
-	}, [userLocation])
+	}, [mapReady, userLocation])
 
 	if (failed) {
 		return (

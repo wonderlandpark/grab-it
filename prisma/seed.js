@@ -131,15 +131,13 @@ async function main() {
 				displayLongitude: 126.9576,
 			},
 	]
-	await Promise.all(
-		experienceData.map((experience) =>
-			prisma.experience.upsert({
-				where: { id: experience.id },
-				create: experience,
-				update: experience,
-			}),
-		),
-	)
+	for (const experience of experienceData) {
+		await prisma.experience.upsert({
+			where: { id: experience.id },
+			create: experience,
+			update: experience,
+		})
+	}
 
 	await prisma.experienceEmotion.createMany({
 		data: [
