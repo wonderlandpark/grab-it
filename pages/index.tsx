@@ -5,6 +5,7 @@ import DiscoverySidebar from '@/components/map/DiscoverySidebar'
 import EmotionFilter from '@/components/map/EmotionFilter'
 import ExperiencePreview from '@/components/map/ExperiencePreview'
 import MapCanvas, { type MapPoint, type MapViewport } from '@/components/map/MapCanvas'
+import { BottomNav } from '@/components/layout/BottomNav'
 import { type EmotionValue, type MapExperience } from '@/types/domain'
 
 const INITIAL_VIEWPORT: MapViewport = {
@@ -259,6 +260,7 @@ export default function DiscoveryPage() {
 					)}
 				</section>
 			</main>
+			<BottomNav />
 		</>
 	)
 }
