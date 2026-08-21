@@ -1,0 +1,192 @@
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+}
+
+enum Role {
+	USER
+	ADMIN
+}
+
+enum Activity {
+	REST
+	WALK
+	EAT
+	TALK
+	VIEW
+	EXERCISE
+	OTHER
+}
+
+enum Emotion {
+	CALM
+	REFRESH
+	EXCITEMENT
+	AWE
+	COMFORT
+	LIBERATION
+}
+
+enum Visibility {
+	PUBLIC
+	PRIVATE
+}
+
+enum ExperienceStatus {
+	PUBLISHED
+	HIDDEN
+	DELETED
+}
+
+enum ReportStatus {
+	OPEN
+	RESOLVED
+	DISMISSED
+}
+
+model User {
+	id            String       @id @default(cuid())
+	name          String?
+	email         String?      @unique
+	emailVerified DateTime?
+	image         String?
+	role          Role         @default(USER)
+	accounts      Account[]
+	sessions      Session[]
+	experiences   Experience[]
+	resonances    Resonance[]
+	reports       Report[]     @relation("Reporter")
+	moderated     Report[]     @relation("Moderator")
+	createdAt     DateTime     @default(now())
+	updatedAt     DateTime     @updatedAt
+}
+
+model Account {
+	id                String  @id @default(cuid())
+	userId            String
+	type              String
+	provider          String
+	providerAccountId String
+	refresh_token     String? @db.Text
+	access_token      String? @db.Text
+	expires_at        Int?
+	token_type        String?
+	scope             String?
+	id_token           String? @db.Text
+	session_state     String?
+	user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@unique([provider, providerAccountId])
+}
+
+model Session {
+	id           String   @id @default(cuid())
+	sessionToken String   @unique
+	userId       String
+	expires      DateTime
+	user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+	identifier String
+	token      String   @unique
+	expires    DateTime
+
+	@@unique([identifier, token])
+}
+
+model Place {
+	id             String       @id @default(cuid())
+	source         String
+	externalId     String?
+	name           String
+	category       String?
+	address        String?
+	roadAddress    String?
+	latitude       Float
+	longitude      Float
+	experiences    Experience[]
+	createdAt      DateTime     @default(now())
+	updatedAt      DateTime     @updatedAt
+
+	@@index([name])
+	@@unique([source, externalId])
+}
+
+model Experience {
+	id               String           @id @default(cuid())
+	authorId         String
+	placeId          String?
+	activity         Activity
+	body             String           @db.VarChar(500)
+	visibility       Visibility       @default(PUBLIC)
+	status           ExperienceStatus @default(PUBLISHED)
+	exactLatitude    Float
+	exactLongitude   Float
+	displayLatitude  Float
+	displayLongitude Float
+	author           User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+	place            Place?           @relation(fields: [placeId], references: [id], onDelete: SetNull)
+	emotions         ExperienceEmotion[]
+	media            ExperienceMedia[]
+	resonances       Resonance[]
+	reports          Report[]
+	createdAt        DateTime         @default(now())
+	updatedAt        DateTime         @updatedAt
+
+	@@index([authorId, createdAt])
+	@@index([visibility, status, createdAt])
+}
+
+model ExperienceEmotion {
+	experienceId String
+	emotion      Emotion
+	experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+	@@id([experienceId, emotion])
+	@@index([emotion])
+}
+
+model ExperienceMedia {
+	id           String     @id @default(cuid())
+	experienceId String
+	storageKey   String     @unique
+	contentType  String
+	position     Int        @default(0)
+	experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+	createdAt    DateTime   @default(now())
+
+	@@index([experienceId, position])
+}
+
+model Resonance {
+	experienceId String
+	userId       String
+	experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+	user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+	createdAt    DateTime   @default(now())
+
+	@@id([experienceId, userId])
+	@@index([userId, createdAt])
+}
+
+model Report {
+	id           String       @id @default(cuid())
+	experienceId String
+	reporterId   String
+	moderatorId  String?
+	reason       String       @db.VarChar(300)
+	status       ReportStatus @default(OPEN)
+	experience   Experience   @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+	reporter     User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+	moderator    User?        @relation("Moderator", fields: [moderatorId], references: [id], onDelete: SetNull)
+	createdAt    DateTime     @default(now())
+	resolvedAt   DateTime?
+
+	@@unique([experienceId, reporterId])
+	@@index([status, createdAt])
+}

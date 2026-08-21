@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Tests and build caches
+coverage/
+*.tsbuildinfo
+
+# Local uploads
+storage/*
+!storage/.gitkeep
+
+# Logs and local OS files
+*.log
+yarn-error.log
+.DS_Store

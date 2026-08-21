@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: emotion_map
+      POSTGRES_USER: emotion_map
+      POSTGRES_PASSWORD: emotion_map
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U emotion_map -d emotion_map']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      target: development
+    env_file: .env
+    command: sh -c "yarn prisma:migrate && yarn prisma:seed"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: development
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - media_data:/app/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  test:
+    build:
+      context: .
+      target: development
+    env_file: .env
+    command: yarn test
+    profiles: ['test']
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  node_modules:
+  media_data:
