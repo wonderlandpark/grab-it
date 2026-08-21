@@ -234,12 +234,12 @@ export default function DiscoveryPage() {
 						<ExperiencePreview
 							experience={selectedExperience}
 							onClose={() => setSelectedExperience(null)}
-							className="absolute inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 md:left-auto md:right-5 md:w-[400px] lg:bottom-5 lg:left-5 lg:right-auto"
+							className="absolute inset-x-3 bottom-[calc(max(.75rem,env(safe-area-inset-bottom))+4.5rem)] z-40 md:bottom-5 md:left-auto md:right-5 md:w-[400px] lg:left-5 lg:right-auto"
 						/>
 					) : (
 						<>
 							{status === 'error' && experiences.length === 0 ? (
-								<div className="absolute inset-x-4 bottom-24 z-30 rounded-2xl bg-white/95 p-4 text-center shadow-xl backdrop-blur lg:hidden">
+								<div className="absolute inset-x-4 bottom-[calc(max(.75rem,env(safe-area-inset-bottom))+4.5rem)] z-30 rounded-2xl bg-white/95 p-4 text-center shadow-xl backdrop-blur md:bottom-4 lg:hidden">
 									<p className="text-sm font-bold">경험을 불러오지 못했어요</p>
 									<button
 										type="button"
@@ -250,12 +250,6 @@ export default function DiscoveryPage() {
 									</button>
 								</div>
 							) : null}
-							<Link
-								href="/experiences/new"
-								className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 z-30 flex items-center gap-2 rounded-full bg-ink px-5 py-3.5 text-sm font-bold text-white shadow-xl transition hover:bg-leaf focus:outline-none focus:ring-2 focus:ring-leaf/40 focus:ring-offset-2 lg:hidden"
-							>
-								<span aria-hidden="true">＋</span> 기록하기
-							</Link>
 						</>
 					)}
 				</section>
