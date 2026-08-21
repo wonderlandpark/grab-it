@@ -14,15 +14,6 @@ services:
       timeout: 5s
       retries: 20
 
-  migrate:
-    image: ghcr.io/wonderlandpark/mind-map:migrate
-    env_file: .env
-    command: sh -c "yarn prisma:migrate && yarn prisma:seed"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: 'no'
-
   web:
     image: ghcr.io/wonderlandpark/mind-map:latest
     restart: unless-stopped
@@ -32,8 +23,8 @@ services:
     volumes:
       - media_data:/app/storage
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
