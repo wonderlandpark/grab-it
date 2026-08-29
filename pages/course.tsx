@@ -126,7 +126,7 @@ export default function CoursePage() {
 						<button onClick={backToDiscovery} className='mb-7 font-bold text-ink/60'>
 							← 검색 결과로
 						</button>
-						<p className='font-bold text-leaf'>선택한 경험으로 구성했어요</p>
+						<p className='font-bold text-leaf'>찜한 경험으로 구성했어요</p>
 						<h1 className='mt-2 text-4xl font-black'>가능한 코스 {courses.length}개</h1>
 						<p className='mt-3 text-ink/55'>
 							시간·동선·남은 좌석을 반영해 실행 가능한 순서로 정리했어요.
@@ -209,7 +209,7 @@ function CourseCard({
 				)}
 			</div>
 			{course.omitted.length > 0 && (
-				<p className='mt-4 text-xs text-ink/45'>선택 항목 {course.omitted.length}개 제외</p>
+				<p className='mt-4 text-xs text-ink/45'>찜한 경험 {course.omitted.length}개 제외</p>
 			)}
 			<button
 				onClick={onOpen}

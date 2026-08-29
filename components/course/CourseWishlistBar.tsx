@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ExperienceRecommendation } from '@/types/domain'
 
 interface SelectedExperienceLabel {
@@ -22,37 +22,42 @@ export function CourseWishlistBar({
 }) {
 	const [open, setOpen] = useState(false)
 	const [resolvedExperiences, setResolvedExperiences] = useState<SelectedExperienceLabel[]>([])
-	const requestedIds = useRef(new Set<string>())
 
 	useEffect(() => {
 		const knownIds = new Set([
 			...experiences.map((item) => item.id),
 			...resolvedExperiences.map((item) => item.id),
 		])
-		const missingIds = wishIds.filter((id) => !knownIds.has(id) && !requestedIds.current.has(id))
+		const missingIds = wishIds.filter((id) => !knownIds.has(id))
 		if (!missingIds.length) return
-		for (const id of missingIds) requestedIds.current.add(id)
 
-		let cancelled = false
 		Promise.all(
 			missingIds.map(async (id) => {
-				const response = await fetch(`/api/experiences/${encodeURIComponent(id)}`)
-				if (!response.ok) return null
-				const data = await response.json()
-				return { id: data.id, title: data.title, space: { name: data.space.name } }
+				try {
+					const response = await fetch(`/api/experiences/${encodeURIComponent(id)}`)
+					if (!response.ok)
+						return {
+							id,
+							title: '이용할 수 없는 경험',
+							space: { name: '공개가 종료되었어요.' },
+						}
+					const data = await response.json()
+					return { id: data.id, title: data.title, space: { name: data.space.name } }
+				} catch {
+					return {
+						id,
+						title: '경험 정보를 불러오지 못했어요',
+						space: { name: '새로고침 후 다시 확인해 주세요.' },
+					}
+				}
 			})
 		).then((items) => {
-			if (cancelled) return
 			setResolvedExperiences((current) => {
 				const byId = new Map(current.map((item) => [item.id, item]))
-				for (const item of items) if (item) byId.set(item.id, item)
+				for (const item of items) byId.set(item.id, item)
 				return [...byId.values()]
 			})
 		})
-
-		return () => {
-			cancelled = true
-		}
 	}, [experiences, resolvedExperiences, wishIds])
 
 	if (!wishIds.length) return null
@@ -66,7 +71,7 @@ export function CourseWishlistBar({
 			<div className='fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-xl items-center gap-2 rounded-2xl bg-ink p-3 text-white shadow-2xl md:bottom-5'>
 				<button onClick={() => setOpen(true)} className='flex-1 px-2 text-left font-black'>
 					찜한 경험 {wishIds.length}개
-					<span className='ml-2 text-sm font-normal text-white/60'>목록 보기</span>
+					<span className='ml-2 text-sm font-normal text-white/60'>찜 목록</span>
 				</button>
 				<button onClick={onCreate} className='rounded-xl bg-leaf px-4 py-3 font-black'>
 					코스 만들기

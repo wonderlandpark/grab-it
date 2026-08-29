@@ -150,11 +150,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	})
 	if (result.courses.length) {
 		const represented = new Set(candidates.map((candidate) => candidate.experience.id))
+		const visibleExperiences = new Map(
+			experiences.map((experience) => [experience.id, experience.title])
+		)
 		const unavailable = experienceIds
 			.filter((id) => !represented.has(id))
 			.map((experienceId) => ({
 				experienceId,
-				reason: '공개가 종료되었거나 현재 남은 좌석이 없어요.',
+				experienceTitle: visibleExperiences.get(experienceId),
+				reason: visibleExperiences.has(experienceId)
+					? '현재 선택한 이동 거리 밖에 있어요.'
+					: '공개가 종료되었거나 현재 남은 좌석이 없어요.',
 			}))
 		for (const course of result.courses) course.omitted.push(...unavailable)
 	}
