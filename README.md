@@ -43,7 +43,20 @@ docker compose run --rm web yarn build
 
 - `pages/index.tsx`: 반응형 지도 탐색
 - `pages/experiences`: 경험 작성·상세
-- `pages/me.tsx`: 내 기록과 공감 기록
+- `pages/index.tsx`: 감정·시작 시간·거리·예산 기반 빈자리 추천
+- `pages/me.tsx`: 예정 예약, 지난 경험, 감정 변화 기록
+- `pages/partner`: 한 계정에서 파트너 신청, 공간·상품·슬롯 관리
+
+## 체험 데이터 정리
+
+게스트 계정과 그 계정이 만든 예약·후기·공간 데이터는 24시간 뒤 정리할 수 있습니다.
+
+```bash
+yarn demo:cleanup
+```
+
+이 명령은 `isDemo=true`이면서 `demoExpiresAt`이 지난 사용자만 삭제하며, 관련 데이터는 관계의 cascade 규칙으로 함께 삭제됩니다.
+
 - `pages/api`: 인증, 지도, 경험, 반응, 신고, 사진 API
 - `prisma`: Prisma 스키마, PostGIS 마이그레이션, 데모 시드
 - `storage`: 개발용 사진 저장 위치이며 실제 실행에서는 Docker 볼륨을 사용

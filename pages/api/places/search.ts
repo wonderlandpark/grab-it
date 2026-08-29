@@ -1,13 +1,7 @@
 import { createHash } from 'crypto'
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-import {
-	ApiError,
-	allowMethods,
-	handleApiError,
-	queryString,
-	requiredString,
-} from '@/lib/api'
+import { ApiError, allowMethods, handleApiError, queryString, requiredString } from '@/lib/api'
 
 interface NaverItem {
 	title: string
@@ -40,7 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const clientId = process.env.NAVER_SEARCH_CLIENT_ID
 		const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET
 		if (!clientId || !clientSecret) {
-			throw new ApiError(503, '장소 검색 API 키가 설정되지 않았습니다. NAVER_SEARCH_CLIENT_ID/SECRET을 확인해 주세요.')
+			throw new ApiError(
+				503,
+				'장소 검색 API 키가 설정되지 않았습니다. NAVER_SEARCH_CLIENT_ID/SECRET을 확인해 주세요.'
+			)
 		}
 
 		const url = new URL('https://naverapihub.apigw.ntruss.com/search/v1/local')

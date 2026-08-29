@@ -1,125 +1,224 @@
 import Head from 'next/head'
-import { useSession } from 'next-auth/react'
+import Image from 'next/image'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
-import { SignInButton } from '@/components/auth/SignInButton'
+import { useEffect, useRef, useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
-import { activities, emotions, type ExperienceDetail } from '@/types/domain'
+import { emotions, type ExperienceDetail } from '@/types/domain'
 
-export default function ExperienceDetailPage() {
-	const router = useRouter()
-	const { status } = useSession()
-	const [experience, setExperience] = useState<ExperienceDetail | null>(null)
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState('')
-	const [reporting, setReporting] = useState(false)
-	const [reportReason, setReportReason] = useState('')
+const dateTime = (value: string) =>
+	new Intl.DateTimeFormat('ko-KR', {
+		timeZone: 'Asia/Seoul',
+		month: 'short',
+		day: 'numeric',
+		weekday: 'short',
+		hour: 'numeric',
+		minute: '2-digit',
+	}).format(new Date(value))
+const PENDING_KEY = 'pending-booking'
+
+export default function ExperiencePage() {
+	const router = useRouter(),
+		{ status } = useSession(),
+		resumed = useRef(false)
+	const [experience, setExperience] = useState<ExperienceDetail | null>(null),
+		[selectedSlot, setSlot] = useState(''),
+		[error, setError] = useState(''),
+		[booking, setBooking] = useState(false),
+		[loginModal, setLoginModal] = useState(false)
 
 	useEffect(() => {
 		if (!router.isReady) return
-		void fetch(`/api/experiences/${router.query.id}`)
+		fetch(`/api/experiences/${router.query.id}`)
 			.then(async (response) => {
 				const data = await response.json()
-				if (!response.ok) throw new Error(data.error ?? '경험을 찾지 못했습니다')
-				setExperience(data.experience)
+				if (!response.ok) throw new Error(data.error)
+				setExperience(data)
+				const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null')
+				setSlot(pending?.experienceId === data.id ? pending.slotId : data.slots[0]?.id || '')
 			})
-			.catch((reason) => setError(reason instanceof Error ? reason.message : '불러오지 못했습니다'))
-			.finally(() => setLoading(false))
-	}, [router.isReady, router.query.id, status])
+			.catch((e) => setError(e.message))
+	}, [router.isReady, router.query.id])
 
-	async function toggleResonance() {
-		if (!experience) return
-		if (status !== 'authenticated') {
-			await router.push('/login')
-			return
-		}
-		const response = await fetch(`/api/experiences/${experience.id}/resonance`, {
-			method: experience.hasResonated ? 'DELETE' : 'POST',
-		})
-		const data = await response.json()
-		if (response.ok) {
-			setExperience({
-				...experience,
-				hasResonated: data.hasResonated,
-				resonanceCount: data.resonanceCount,
-			})
-		}
-	}
-
-	async function submitReport() {
-		if (!experience || !reportReason.trim()) return
-		const response = await fetch(`/api/experiences/${experience.id}/report`, {
+	async function submitBooking(slotId = selectedSlot) {
+		if (!experience || !slotId) return
+		setBooking(true)
+		setError('')
+		const intent = JSON.parse(sessionStorage.getItem('discovery-intent') || '{}')
+		const response = await fetch('/api/bookings', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ reason: reportReason }),
+			body: JSON.stringify({
+				slotId,
+				desiredEmotion: intent.desiredEmotion || experience.emotions[0],
+				currentState: intent.currentState || null,
+			}),
 		})
-		if (response.ok) {
-			setReporting(false)
-			setReportReason('')
-			alert('신고가 접수됐습니다.')
-		} else if (response.status === 401) {
-			await router.push('/login')
+		const data = await response.json()
+		setBooking(false)
+		if (!response.ok) return setError(data.error)
+		sessionStorage.removeItem(PENDING_KEY)
+		await router.push(`/bookings/${data.id}`)
+	}
+
+	useEffect(() => {
+		if (
+			status !== 'authenticated' ||
+			!experience ||
+			router.query.resumeBooking !== '1' ||
+			resumed.current
+		)
+			return
+		const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null')
+		if (pending?.experienceId === experience.id) {
+			resumed.current = true
+			void submitBooking(pending.slotId)
 		}
+	}, [status, experience, router.query.resumeBooking]) // eslint-disable-line react-hooks/exhaustive-deps
+
+	function reserve() {
+		if (!experience || !selectedSlot) return
+		if (status !== 'authenticated') {
+			sessionStorage.setItem(
+				PENDING_KEY,
+				JSON.stringify({ experienceId: experience.id, slotId: selectedSlot })
+			)
+			setLoginModal(true)
+			return
+		}
+		void submitBooking()
 	}
 
-	if (loading) {
-		return <AppShell><div className='grid min-h-[70dvh] place-items-center text-ink/50'>경험을 불러오는 중…</div></AppShell>
+	async function guestContinue() {
+		const result = await signIn('credentials', { redirect: false })
+		if (result?.error) return setError('게스트 로그인을 시작하지 못했습니다.')
+		setLoginModal(false)
+		await submitBooking()
 	}
-	if (error || !experience) {
-		return <AppShell><div className='grid min-h-[70dvh] place-items-center px-5 text-center'><div><h1 className='text-2xl font-semibold'>경험을 열 수 없어요</h1><p className='mt-2 text-ink/55'>{error}</p></div></div></AppShell>
+	async function kakaoContinue() {
+		await signIn('kakao', {
+			callbackUrl: `${window.location.origin}${router.asPath.split('?')[0]}?resumeBooking=1`,
+		})
 	}
 
-	const activity = activities.find((item) => item.value === experience.activity)
-
+	if (!experience)
+		return (
+			<AppShell>
+				<div className='grid min-h-[70vh] place-items-center'>{error || '경험을 불러오는 중…'}</div>
+			</AppShell>
+		)
 	return (
 		<AppShell>
-			<Head><title>{experience.placeName ?? '감정 기록'} · 마음지도</title></Head>
-			<article className='mx-auto max-w-5xl px-5 py-6 md:grid md:grid-cols-[1.15fr_0.85fr] md:gap-8 md:py-10'>
+			<Head>
+				<title>{experience.title} · 틈</title>
+			</Head>
+			<article className='mx-auto grid max-w-6xl gap-8 px-5 py-10 md:grid-cols-[1.2fr_.8fr]'>
 				<section>
-					{experience.media.length ? (
-						<div className='scrollbar-none flex snap-x gap-3 overflow-x-auto rounded-3xl'>
-							{experience.media.map((media) => (
-								// eslint-disable-next-line @next/next/no-img-element
-								<img key={media.id} src={media.url} alt='경험 사진' className='aspect-[4/3] w-[88%] shrink-0 snap-center rounded-3xl object-cover sm:w-[70%] md:w-full' />
+					<div className='relative grid aspect-[16/9] place-items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-mist to-[#f6e8ca]'>
+						{experience.mediaUrl ? (
+							<Image
+								src={experience.mediaUrl}
+								alt=''
+								fill
+								sizes='(min-width: 768px) 60vw, 100vw'
+								className='object-cover'
+							/>
+						) : (
+							<span className='text-7xl'>✨</span>
+						)}
+					</div>
+					<p className='mt-8 font-bold text-leaf'>{experience.space.name}</p>
+					<h1 className='mt-2 text-4xl font-black'>{experience.title}</h1>
+					<p className='mt-4 leading-7 text-ink/65'>{experience.description}</p>
+					<div className='mt-5 flex flex-wrap gap-2'>
+						{experience.ambienceTags.map((tag) => (
+							<span key={tag} className='rounded-full bg-white px-3 py-2 text-sm'>
+								#{tag}
+							</span>
+						))}
+					</div>
+					<div className='mt-8 rounded-3xl bg-white p-6'>
+						<h2 className='font-black'>공간 안내</h2>
+						<p className='mt-2'>{experience.space.address}</p>
+						{experience.rules && <p className='mt-3 text-sm text-ink/60'>{experience.rules}</p>}
+					</div>
+					{experience.reviews.length > 0 && (
+						<div className='mt-8'>
+							<h2 className='text-2xl font-black'>감정 변화 영수증</h2>
+							{experience.reviews.map((review) => (
+								<div key={review.id} className='mt-3 rounded-2xl bg-white p-5'>
+									<strong>{emotions.find((e) => e.value === review.afterEmotion)?.label}</strong>
+									<p className='mt-2 text-sm'>{review.body}</p>
+									<p className='mt-2 text-xs text-ink/45'>{review.highlightTags.join(' · ')}</p>
+								</div>
 							))}
 						</div>
-					) : (
-						<div className='grid aspect-[4/3] place-items-center rounded-3xl bg-[radial-gradient(circle_at_30%_30%,_#dce8e2,_#b7d0c5)] text-5xl'>🌿</div>
 					)}
 				</section>
-
-				<section className='mt-6 md:mt-0'>
-					<p className='text-sm font-semibold text-leaf'>{experience.placeName ?? '지도 위의 한 장소'}</p>
-					<h1 className='mt-2 text-3xl font-semibold leading-tight tracking-tight'>{experience.body}</h1>
-					<div className='mt-4 flex flex-wrap gap-2'>
-						{experience.emotions.map((value) => {
-							const emotion = emotions.find((item) => item.value === value)
-							return emotion ? <span key={value} className='rounded-full bg-mist px-3 py-1.5 text-sm text-leaf'>{emotion.emoji} {emotion.label}</span> : null
-						})}
-					</div>
-					<div className='mt-6 rounded-3xl bg-white p-5 shadow-sm'>
-						<p className='text-sm text-ink/50'>{activity?.label} · {experience.author.name ?? '감정 여행자'}</p>
-						<p className='mt-3 text-sm leading-relaxed text-ink/60'>공개 지도에서는 작성자의 정확한 위치 대신 주변의 흐린 위치만 표시해요.</p>
-					</div>
-
-					<button onClick={toggleResonance} className={`mt-5 w-full rounded-2xl px-5 py-4 font-semibold ${experience.hasResonated ? 'bg-mist text-leaf' : 'bg-leaf text-white'}`}>
-						{experience.hasResonated ? '같은 경험을 남겼어요' : '나도 경험했어요'} · {experience.resonanceCount}
-					</button>
-					{status !== 'authenticated' ? <div className='mt-3 text-center'><SignInButton className='w-full' /></div> : null}
-
-					{!experience.isOwner ? (
-						<div className='mt-5'>
-							<button onClick={() => setReporting((value) => !value)} className='text-sm text-ink/45 underline underline-offset-4'>부적절한 기록 신고</button>
-							{reporting ? (
-								<div className='mt-3 rounded-2xl bg-white p-4'>
-									<textarea value={reportReason} onChange={(event) => setReportReason(event.target.value.slice(0, 300))} placeholder='신고 사유를 알려주세요' className='w-full rounded-xl border border-black/10 p-3 text-sm' rows={3} />
-									<button onClick={submitReport} className='mt-2 rounded-xl bg-ink px-4 py-2 text-sm text-white'>신고 접수</button>
-								</div>
-							) : null}
+				<aside>
+					<div className='sticky top-24 rounded-[2rem] bg-white p-6 shadow-lg'>
+						<p className='text-sm font-bold text-coral'>체험용 · 현장결제 예정</p>
+						<p className='mt-1 text-2xl font-black'>
+							{experience.priceWon ? `${experience.priceWon.toLocaleString()}원` : '무료'}
+						</p>
+						<p className='mt-1 text-sm'>{experience.durationMinutes}분 경험</p>
+						<h2 className='mt-7 font-black'>시작 시간 선택</h2>
+						<div className='mt-3 space-y-2'>
+							{experience.slots.map((slot) => (
+								<button
+									key={slot.id}
+									onClick={() => setSlot(slot.id)}
+									className={`w-full rounded-2xl border p-4 text-left ${selectedSlot === slot.id ? 'border-leaf bg-mist' : ''}`}
+								>
+									<strong>{dateTime(slot.startsAt)}</strong>
+									<span className='float-right text-sm text-coral'>{slot.availableSeats}석</span>
+								</button>
+							))}
 						</div>
-					) : null}
-				</section>
+						{!experience.slots.length && (
+							<p className='mt-3 text-sm text-ink/50'>예약 가능한 시간이 없습니다.</p>
+						)}
+						<button
+							onClick={reserve}
+							disabled={!selectedSlot || booking}
+							className='mt-6 w-full rounded-2xl bg-leaf p-4 font-black text-white disabled:opacity-40'
+						>
+							{booking ? '좌석 확인 중…' : '이 경험 예약하기'}
+						</button>
+						{error && <p className='mt-3 text-sm font-bold text-coral'>{error}</p>}
+					</div>
+				</aside>
 			</article>
+			{loginModal && (
+				<div
+					role='dialog'
+					aria-modal='true'
+					className='fixed inset-0 z-[100] grid place-items-center bg-black/40 p-5'
+				>
+					<div className='w-full max-w-md rounded-[2rem] bg-white p-7 shadow-2xl'>
+						<h2 className='text-2xl font-black'>예약을 저장하려면 계속해 주세요.</h2>
+						<p className='mt-2 text-sm text-ink/55'>선택한 경험과 시간은 그대로 유지됩니다.</p>
+						<button
+							onClick={guestContinue}
+							className='mt-7 w-full rounded-2xl bg-leaf p-4 font-black text-white'
+						>
+							게스트로 체험하기
+						</button>
+						<button
+							onClick={kakaoContinue}
+							className='mt-3 w-full rounded-2xl bg-[#FEE500] p-4 font-black text-[#191919]'
+						>
+							카카오로 계속하기
+						</button>
+						<button
+							onClick={() => setLoginModal(false)}
+							className='mt-4 w-full text-sm text-ink/45'
+						>
+							닫기
+						</button>
+					</div>
+				</div>
+			)}
 		</AppShell>
 	)
 }

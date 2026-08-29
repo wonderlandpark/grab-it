@@ -1,54 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-
-import {
-	ApiError,
-	allowMethods,
-	handleApiError,
-	queryString,
-	requireAdmin,
-} from '@/lib/api'
 import { prisma } from '@/lib/prisma'
-
-const actions = new Set(['HIDE', 'RESTORE', 'RESOLVE', 'DISMISS'])
+import { requireAdmin } from '@/lib/request'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-	if (!allowMethods(req, res, ['PATCH'])) return
-
-	try {
-		const admin = await requireAdmin(req, res)
-		const id = queryString(req.query.id)
-		const action = req.body?.action
-		if (!id) throw new ApiError(400, '신고 ID가 필요합니다')
-		if (typeof action !== 'string' || !actions.has(action)) {
-			throw new ApiError(400, '처리 방법이 올바르지 않습니다')
-		}
-		const report = await prisma.report.findUnique({
-			where: { id },
-			select: { id: true, experienceId: true },
-		})
-		if (!report) throw new ApiError(404, '신고를 찾을 수 없습니다')
-
-		const reportStatus = action === 'DISMISS' ? 'DISMISSED' : 'RESOLVED'
-		const experienceStatus = action === 'HIDE' ? 'HIDDEN' : action === 'RESTORE' ? 'PUBLISHED' : null
-		const result = await prisma.$transaction(async (transaction) => {
-			if (experienceStatus) {
-				await transaction.experience.update({
-					where: { id: report.experienceId },
-					data: { status: experienceStatus },
-				})
-			}
-			return transaction.report.update({
-				where: { id },
-				data: {
-					status: reportStatus,
-					moderatorId: admin.id,
-					resolvedAt: new Date(),
-				},
-				select: { id: true, status: true, resolvedAt: true },
+	if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
+	const admin = await requireAdmin(req, res)
+	if (!admin) return
+	const action = String(req.body?.action || '')
+	if (!['HIDE', 'RESTORE', 'RESOLVE', 'DISMISS'].includes(action))
+		return res.status(400).json({ error: '처리 방법이 올바르지 않습니다.' })
+	const report = await prisma.report.findUnique({ where: { id: String(req.query.id) } })
+	if (!report) return res.status(404).json({ error: '신고를 찾을 수 없습니다.' })
+	await prisma.$transaction(async (tx) => {
+		if (action === 'HIDE' || action === 'RESTORE')
+			await tx.review.update({
+				where: { id: report.reviewId },
+				data: { status: action === 'HIDE' ? 'HIDDEN' : 'PUBLISHED' },
 			})
+		await tx.report.update({
+			where: { id: report.id },
+			data: {
+				status: action === 'DISMISS' ? 'DISMISSED' : 'RESOLVED',
+				moderatorId: admin.id,
+				resolvedAt: new Date(),
+			},
 		})
-		res.status(200).json({ report: result })
-	} catch (error) {
-		handleApiError(error, res)
-	}
+	})
+	return res.status(200).json({ ok: true })
 }

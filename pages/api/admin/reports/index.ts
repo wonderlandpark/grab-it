@@ -1,36 +1,27 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-
-import { allowMethods, handleApiError, requireAdmin } from '@/lib/api'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/request'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-	if (!allowMethods(req, res, ['GET'])) return
-
-	try {
-		await requireAdmin(req, res)
-		const reports = await prisma.report.findMany({
-			where: { status: 'OPEN' },
-			select: {
-				id: true,
-				reason: true,
-				status: true,
-				createdAt: true,
-				reporter: { select: { id: true, name: true } },
-				experience: {
-					select: {
-						id: true,
-						body: true,
-						status: true,
-						visibility: true,
-						author: { select: { id: true, name: true } },
+	if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+	if (!(await requireAdmin(req, res))) return
+	const reports = await prisma.report.findMany({
+		where: { status: 'OPEN' },
+		include: {
+			reporter: { select: { name: true } },
+			review: {
+				include: {
+					booking: {
+						include: {
+							user: { select: { name: true } },
+							slot: { include: { experience: { select: { title: true } } } },
+						},
 					},
 				},
 			},
-			orderBy: { createdAt: 'asc' },
-			take: 100,
-		})
-		res.status(200).json({ reports })
-	} catch (error) {
-		handleApiError(error, res)
-	}
+		},
+		orderBy: { createdAt: 'asc' },
+		take: 100,
+	})
+	return res.status(200).json(reports)
 }

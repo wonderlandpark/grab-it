@@ -38,7 +38,7 @@ interface NaverMapsApi {
 		addListener: (
 			target: NaverMapInstance | NaverMarkerInstance,
 			eventName: string,
-			listener: (event?: { coord?: NaverCoordinate }) => void,
+			listener: (event?: { coord?: NaverCoordinate }) => void
 		) => NaverEventListener
 		removeListener: (listener: NaverEventListener) => void
 	}

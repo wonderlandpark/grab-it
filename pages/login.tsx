@@ -1,17 +1,17 @@
 import Head from 'next/head'
-import { useSession } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
-import { SignInButton } from '@/components/auth/SignInButton'
 import { Brand } from '@/components/layout/Brand'
 
 export default function LoginPage() {
 	const { status } = useSession()
 	const router = useRouter()
+	const callbackUrl = typeof router.query.callbackUrl === 'string' ? router.query.callbackUrl : '/'
 
 	useEffect(() => {
-		if (status === 'authenticated') void router.replace('/')
-	}, [router, status])
+		if (status === 'authenticated') void router.replace(callbackUrl)
+	}, [callbackUrl, router, status])
 
 	return (
 		<>
@@ -26,9 +26,20 @@ export default function LoginPage() {
 					<p className='text-sm font-medium text-leaf'>오늘은 어떤 마음을 만나고 싶나요?</p>
 					<h1 className='mt-2 text-3xl font-semibold tracking-tight'>감정으로 장소를 발견해요</h1>
 					<p className='mx-auto mt-4 max-w-sm leading-relaxed text-ink/60'>
-						지도 탐색은 로그인 없이 가능해요. 경험을 남기거나 공감할 때만 로그인합니다.
+						지도와 추천은 로그인 없이 볼 수 있어요. 예약을 저장할 때만 계속해 주세요.
 					</p>
-					<SignInButton className='mt-8 w-full' />
+					<button
+						onClick={() => signIn('credentials', { callbackUrl })}
+						className='mt-8 w-full rounded-2xl bg-leaf px-5 py-4 font-black text-white'
+					>
+						게스트로 체험하기
+					</button>
+					<button
+						onClick={() => signIn('kakao', { callbackUrl })}
+						className='mt-3 w-full rounded-2xl bg-[#FEE500] px-5 py-4 font-black text-[#191919]'
+					>
+						카카오로 계속하기
+					</button>
 				</section>
 			</main>
 		</>

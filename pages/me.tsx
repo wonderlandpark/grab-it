@@ -1,55 +1,111 @@
 import Head from 'next/head'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { SignInButton } from '@/components/auth/SignInButton'
-import { ExperienceCard } from '@/components/experience/ExperienceCard'
 import { AppShell } from '@/components/layout/AppShell'
-import type { MapExperience } from '@/types/domain'
+import { SignInButton } from '@/components/auth/SignInButton'
+import type { BookingTicket } from '@/types/domain'
 
-export default function MyPage() {
-	const { data: session, status } = useSession()
-	const [tab, setTab] = useState<'mine' | 'resonated'>('mine')
-	const [experiences, setExperiences] = useState<MapExperience[]>([])
-	const [loading, setLoading] = useState(false)
-
+const format = (value: string) =>
+	new Intl.DateTimeFormat('ko-KR', {
+		timeZone: 'Asia/Seoul',
+		month: 'long',
+		day: 'numeric',
+		weekday: 'short',
+		hour: 'numeric',
+		minute: '2-digit',
+	}).format(new Date(value))
+export default function Me() {
+	const { data: session, status } = useSession(),
+		[bookings, setBookings] = useState<BookingTicket[]>([])
 	useEffect(() => {
-		if (status !== 'authenticated') return
-		setLoading(true)
-		const endpoint = tab === 'mine' ? '/api/me/experiences' : '/api/me/resonances'
-		void fetch(endpoint)
-			.then((response) => response.json())
-			.then((data) => setExperiences(data.experiences ?? []))
-			.finally(() => setLoading(false))
-	}, [status, tab])
-
-	if (status !== 'authenticated') {
+		if (status === 'authenticated')
+			fetch('/api/me/bookings')
+				.then((r) => r.json())
+				.then(setBookings)
+	}, [status])
+	if (status !== 'authenticated')
 		return (
 			<AppShell>
-				<div className='mx-auto grid min-h-[70dvh] max-w-lg place-items-center px-5 text-center'>
-					<div><p className='text-sm font-semibold text-leaf'>나만의 감정 보관함</p><h1 className='mt-2 text-3xl font-semibold'>내 기록을 모아보세요</h1><p className='mt-3 text-ink/55'>공개하지 않은 경험도 안전하게 보관합니다.</p><SignInButton className='mt-6' /></div>
+				<div className='grid min-h-[70vh] place-items-center text-center'>
+					<div>
+						<h1 className='text-3xl font-black'>내 경험을 한곳에서</h1>
+						<p className='mt-2 text-ink/55'>예약과 감정 변화 기록을 확인해요.</p>
+						<SignInButton className='mt-6' />
+					</div>
 				</div>
 			</AppShell>
 		)
-	}
-
+	const upcoming = bookings.filter(
+			(b) => b.status === 'CONFIRMED' && new Date(b.slot.startsAt) > new Date()
+		),
+		past = bookings.filter((b) => !upcoming.includes(b))
 	return (
 		<AppShell>
-			<Head><title>내 마음 · 마음지도</title></Head>
-			<div className='mx-auto max-w-5xl px-5 py-7 md:py-10'>
-				<header className='flex items-center gap-4'>
-					{session?.user?.image ? (
-						// eslint-disable-next-line @next/next/no-img-element
-						<img src={session.user.image} alt='' className='h-16 w-16 rounded-full object-cover' />
-					) : <span className='grid h-16 w-16 place-items-center rounded-full bg-mist text-2xl'>◡</span>}
-					<div><p className='text-sm text-ink/45'>마음 여행자</p><h1 className='text-2xl font-semibold'>{session?.user?.name ?? '감정 여행자'}</h1></div>
+			<Head>
+				<title>내 정보 · 틈</title>
+			</Head>
+			<div className='mx-auto max-w-4xl px-5 py-10'>
+				<header>
+					<p className='text-sm text-ink/50'>안녕하세요</p>
+					<h1 className='text-3xl font-black'>{session?.user?.name || '오늘의 여행자'}님</h1>
 				</header>
-				<div className='mt-8 flex gap-2 rounded-2xl bg-white p-1.5'>
-					<button onClick={() => setTab('mine')} className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold ${tab === 'mine' ? 'bg-leaf text-white' : 'text-ink/55'}`}>내 기록</button>
-					<button onClick={() => setTab('resonated')} className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold ${tab === 'resonated' ? 'bg-leaf text-white' : 'text-ink/55'}`}>공감한 경험</button>
-				</div>
-				{loading ? <p className='py-16 text-center text-ink/45'>기록을 불러오는 중…</p> : experiences.length ? (
-					<div className='mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>{experiences.map((experience) => <ExperienceCard key={experience.id} experience={experience} />)}</div>
-				) : <div className='mt-5 rounded-3xl bg-white px-5 py-16 text-center'><p className='text-3xl'>🗺️</p><p className='mt-3 font-semibold'>아직 기록이 없어요</p><p className='mt-1 text-sm text-ink/50'>지도에서 마음에 닿는 장소를 찾아보세요.</p></div>}
+				<section className='mt-10'>
+					<div className='flex items-center justify-between'>
+						<h2 className='text-2xl font-black'>예정 예약</h2>
+						<Link href='/partner' className='text-sm font-bold text-leaf'>
+							내 공간 관리 →
+						</Link>
+					</div>
+					<div className='mt-4 space-y-3'>
+						{upcoming.map((booking) => (
+							<Link
+								key={booking.id}
+								href={`/bookings/${booking.id}`}
+								className='block rounded-3xl bg-white p-6 shadow-sm'
+							>
+								<p className='font-black'>{booking.slot.experience.title}</p>
+								<p className='mt-2 text-sm'>
+									{format(booking.slot.startsAt)} · {booking.slot.experience.space.name}
+								</p>
+								<span className='mt-3 inline-block rounded-full bg-mist px-3 py-1 text-xs font-bold text-leaf'>
+									QR 티켓 보기
+								</span>
+							</Link>
+						))}
+						{!upcoming.length && (
+							<p className='rounded-3xl bg-white p-8 text-center text-ink/45'>
+								예정된 예약이 없어요.
+							</p>
+						)}
+					</div>
+				</section>
+				<section className='mt-10'>
+					<h2 className='text-2xl font-black'>지난 경험</h2>
+					<div className='mt-4 space-y-3'>
+						{past.map((booking) => (
+							<Link
+								key={booking.id}
+								href={`/bookings/${booking.id}`}
+								className='flex justify-between rounded-2xl bg-white p-5'
+							>
+								<span>
+									<strong>{booking.slot.experience.title}</strong>
+									<small className='mt-1 block text-ink/50'>{format(booking.slot.startsAt)}</small>
+								</span>
+								<span className='text-sm'>
+									{booking.review
+										? '기록 완료'
+										: booking.status === 'CHECKED_IN'
+											? '후기 쓰기'
+											: booking.status === 'CANCELLED'
+												? '취소됨'
+												: '이용 전'}
+								</span>
+							</Link>
+						))}
+					</div>
+				</section>
 			</div>
 		</AppShell>
 	)

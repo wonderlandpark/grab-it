@@ -1,5 +1,3 @@
-import { createHash } from 'crypto'
-
 export interface Coordinates {
 	latitude: number
 	longitude: number
@@ -36,36 +34,14 @@ export function parseBounds(value: unknown): MapBounds | null {
 	return { north, south, east, west }
 }
 
-/**
- * Produces a stable public point 80-220 metres from the submitted location.
- * The seed is private server-side data, so clients cannot reverse the offset.
- */
-export function blurCoordinates(
-	coordinates: Coordinates,
-	seed: string,
-	minMeters = 80,
-	maxMeters = 220,
-): Coordinates {
-	if (!isValidCoordinates(coordinates.latitude, coordinates.longitude)) {
-		throw new Error('Invalid coordinates')
-	}
-
-	const digest = createHash('sha256')
-		.update(`${seed}:${coordinates.latitude.toFixed(6)}:${coordinates.longitude.toFixed(6)}`)
-		.digest()
-	const distanceRatio = digest.readUInt32BE(0) / 0xffffffff
-	const angleRatio = digest.readUInt32BE(4) / 0xffffffff
-	const distance = minMeters + (maxMeters - minMeters) * distanceRatio
-	const angle = angleRatio * Math.PI * 2
-	const latitudeRadians = (coordinates.latitude * Math.PI) / 180
-	const northOffset = Math.cos(angle) * distance
-	const eastOffset = Math.sin(angle) * distance
-
-	return {
-		latitude:
-			coordinates.latitude + (northOffset / EARTH_RADIUS_METERS) * (180 / Math.PI),
-		longitude:
-			coordinates.longitude +
-			(eastOffset / (EARTH_RADIUS_METERS * Math.cos(latitudeRadians))) * (180 / Math.PI),
-	}
+export function distanceInMeters(a: Coordinates, b: Coordinates) {
+	const toRadians = (degrees: number) => (degrees * Math.PI) / 180
+	const latitudeDelta = toRadians(b.latitude - a.latitude)
+	const longitudeDelta = toRadians(b.longitude - a.longitude)
+	const latitudeA = toRadians(a.latitude)
+	const latitudeB = toRadians(b.latitude)
+	const haversine =
+		Math.sin(latitudeDelta / 2) ** 2 +
+		Math.cos(latitudeA) * Math.cos(latitudeB) * Math.sin(longitudeDelta / 2) ** 2
+	return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
 }

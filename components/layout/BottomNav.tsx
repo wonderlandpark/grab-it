@@ -2,9 +2,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 const items = [
-	{ href: '/', label: '지도', icon: '⌖' },
-	{ href: '/experiences/new', label: '기록', icon: '＋' },
-	{ href: '/me', label: '내 마음', icon: '◡' },
+	{ href: '/', label: '홈', icon: '⌂' },
+	{ href: '/?view=map', label: '지도', icon: '⌖' },
+	{ href: '/me', label: '예약', icon: '▣' },
+	{ href: '/partner', label: '내 정보', icon: '◡' },
 ]
 
 export function BottomNav() {
