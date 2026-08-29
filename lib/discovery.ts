@@ -7,25 +7,20 @@ export interface ScoringInput {
 	distanceMeters: number
 	maxDistanceMeters: number
 	startsAt: Date
-	now: Date
-	windowMinutes: number
-	priceWon: number
-	maxBudget?: number
+	earliest: Date
+	latest: Date
 }
 
 export function recommendationScore(input: ScoringInput) {
 	const emotion = input.emotions.includes(input.desiredEmotion) ? 50 : 0
 	const distance = Math.max(
 		0,
-		20 * (1 - input.distanceMeters / Math.max(input.maxDistanceMeters, 1))
+		25 * (1 - input.distanceMeters / Math.max(input.maxDistanceMeters, 1))
 	)
-	const minutesUntilStart = Math.max(0, (input.startsAt.getTime() - input.now.getTime()) / 60000)
-	const speed = Math.max(0, 20 * (1 - minutesUntilStart / input.windowMinutes))
-	const budget =
-		input.maxBudget == null
-			? 10
-			: Math.max(0, 10 * (1 - input.priceWon / Math.max(input.maxBudget, 1)))
-	return Math.round((emotion + distance + speed + budget) * 10) / 10
+	const windowMilliseconds = Math.max(1, input.latest.getTime() - input.earliest.getTime())
+	const position = Math.max(0, input.startsAt.getTime() - input.earliest.getTime())
+	const time = Math.max(0, 25 * (1 - position / windowMilliseconds))
+	return Math.round((emotion + distance + time) * 10) / 10
 }
 
 export function distanceFrom(

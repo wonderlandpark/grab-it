@@ -1,20 +1,23 @@
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RecommendationCard } from '@/components/discovery/RecommendationCard'
-import { BudgetNumberLine, NumberLineSlider } from '@/components/discovery/NumberLineSlider'
+import { ActivityTimeRange, NumberLineSlider } from '@/components/discovery/NumberLineSlider'
+import { CourseWishlistBar } from '@/components/course/CourseWishlistBar'
+import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import MapCanvas from '@/components/map/MapCanvas'
+import { readDiscoveryView, writeDiscoveryView } from '@/lib/course-storage'
 import {
 	currentStates,
 	emotions,
-	startWindows,
 	type EmotionValue,
 	type ExperienceRecommendation,
 	type PlaceSearchResult,
 } from '@/types/domain'
 
-const SEOUL = { latitude: 37.545, longitude: 127.045 }
+const FALLBACK_LOCATION = { latitude: 37.4812071, longitude: 126.9527294 }
+const PAGE_SIZE = 12
 const distanceOptions = [
 	{ value: 1, label: '1km' },
 	{ value: 3, label: '3km' },
@@ -32,146 +35,331 @@ const inferredEmotion: Record<string, EmotionValue> = {
 
 export default function Home() {
 	const router = useRouter()
+	const wishlist = useCourseWishlist()
 	const [currentState, setCurrentState] = useState('')
 	const [desiredEmotion, setDesiredEmotion] = useState<EmotionValue | ''>('')
 	const [unsure, setUnsure] = useState(false)
-	const [startWithinMinutes, setWindow] = useState(180)
+	const [availableFromMinutes, setAvailableFrom] = useState(0)
+	const [availableUntilMinutes, setAvailableUntil] = useState(180)
 	const [maxDistanceKm, setDistance] = useState(3)
-	const [maxBudget, setBudget] = useState('')
-	const [location, setLocation] = useState(SEOUL)
-	const [locationName, setLocationName] = useState('성수동 기준')
+	const [location, setLocation] = useState(FALLBACK_LOCATION)
+	const [locationName, setLocationName] = useState('위치 확인 중…')
 	const [locationQuery, setLocationQuery] = useState('')
 	const [placeResults, setPlaceResults] = useState<PlaceSearchResult[]>([])
 	const [results, setResults] = useState<{
-		recommended: ExperienceRecommendation[]
-		all: ExperienceRecommendation[]
+		items: ExperienceRecommendation[]
+		total: number
+		nextOffset: number | null
 	} | null>(null)
 	const [loading, setLoading] = useState(false)
+	const [loadingMore, setLoadingMore] = useState(false)
 	const [error, setError] = useState('')
-	const [showAll, setShowAll] = useState(false)
 	const [showMap, setShowMap] = useState(false)
+	const mapLoadAttempted = useRef(false)
+	const restored = useRef(false)
+	const restoreScroll = useRef<number | null>(null)
+	const resultSentinel = useRef<HTMLDivElement | null>(null)
+	const activeRecommendationParams = useRef('')
+	const requestSerial = useRef(0)
+	const pendingResultScroll = useRef(false)
 	const queryReady = router.isReady && typeof router.query.desiredEmotion === 'string'
+	const mapRequested = router.isReady && router.query.view === 'map'
+
+	useEffect(() => {
+		if (!mapRequested) return
+		setShowMap(true)
+
+		if (results) {
+			window.setTimeout(
+				() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }),
+				0
+			)
+		}
+	}, [mapRequested, results])
+
+	async function loadRecommendationPages(params: URLSearchParams, targetCount = PAGE_SIZE) {
+		const serial = ++requestSerial.current
+		const baseParams = params.toString()
+		activeRecommendationParams.current = baseParams
+		setLoading(true)
+		setError('')
+		try {
+			const items: ExperienceRecommendation[] = []
+			let total = 0
+			let nextOffset: number | null = 0
+			do {
+				const pageParams = new URLSearchParams(baseParams)
+				pageParams.set('offset', String(nextOffset))
+				pageParams.set('limit', String(PAGE_SIZE))
+				const response = await fetch(`/api/discovery/recommendations?${pageParams}`)
+				const data = await response.json()
+				if (!response.ok) throw new Error(data.error)
+				for (const item of data.items as ExperienceRecommendation[]) {
+					if (!items.some((current) => current.id === item.id)) items.push(item)
+				}
+				total = data.total
+				nextOffset = data.nextOffset
+			} while (nextOffset !== null && items.length < targetCount)
+			if (serial !== requestSerial.current) return
+			setResults({ items, total, nextOffset })
+		} catch (reason) {
+			if (serial !== requestSerial.current) return
+			setError(reason instanceof Error ? reason.message : '추천을 불러오지 못했습니다.')
+		} finally {
+			if (serial === requestSerial.current) setLoading(false)
+		}
+	}
+
+	async function loadMoreResults() {
+		if (!results?.nextOffset || loadingMore || !activeRecommendationParams.current) return
+		setLoadingMore(true)
+		try {
+			const params = new URLSearchParams(activeRecommendationParams.current)
+			params.set('offset', String(results.nextOffset))
+			params.set('limit', String(PAGE_SIZE))
+			const response = await fetch(`/api/discovery/recommendations?${params}`)
+			const data = await response.json()
+			if (!response.ok) throw new Error(data.error)
+			setResults((current) => {
+				if (!current) return data
+				const ids = new Set(current.items.map((item) => item.id))
+				const nextItems = (data.items as ExperienceRecommendation[]).filter(
+					(item) => !ids.has(item.id)
+				)
+				return {
+					items: [...current.items, ...nextItems],
+					total: data.total,
+					nextOffset: data.nextOffset,
+				}
+			})
+		} catch (reason) {
+			setError(reason instanceof Error ? reason.message : '다음 경험을 불러오지 못했습니다.')
+		} finally {
+			setLoadingMore(false)
+		}
+	}
+
+	useEffect(() => {
+		const target = resultSentinel.current
+		if (!target || results?.nextOffset === null || loadingMore) return
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) void loadMoreResults()
+			},
+			{ rootMargin: '300px' }
+		)
+		observer.observe(target)
+		return () => observer.disconnect()
+	}, [loadingMore, results?.nextOffset]) // eslint-disable-line react-hooks/exhaustive-deps
+
+	useEffect(() => {
+		if (!mapRequested || queryReady || results || mapLoadAttempted.current) return
+		mapLoadAttempted.current = true
+
+		const params = new URLSearchParams({
+			desiredEmotion: 'CALM',
+			availableFromMinutes: '0',
+			availableUntilMinutes: '1440',
+			maxDistanceKm: '30',
+			latitude: String(FALLBACK_LOCATION.latitude),
+			longitude: String(FALLBACK_LOCATION.longitude),
+		})
+
+		void loadRecommendationPages(params)
+	}, [mapRequested, queryReady, results])
 
 	// Every discovery input is represented in asPath, so a shared URL restores the same result.
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		if (!queryReady) return
 		const desired = String(router.query.desiredEmotion) as EmotionValue
-		const nextWindow = Number(router.query.startWithinMinutes || 180)
+		const legacyWindow = Number(router.query.startWithinMinutes || 180)
+		const nextFrom = Number(router.query.availableFromMinutes || 0)
+		const nextUntil = Number(router.query.availableUntilMinutes || legacyWindow)
 		const nextDistance = Number(router.query.maxDistanceKm || 3)
-		const nextBudget = String(router.query.maxBudget || '')
 		const nextLocation = {
-			latitude: Number(router.query.latitude || SEOUL.latitude),
-			longitude: Number(router.query.longitude || SEOUL.longitude),
+			latitude: Number(router.query.latitude || FALLBACK_LOCATION.latitude),
+			longitude: Number(router.query.longitude || FALLBACK_LOCATION.longitude),
 		}
 		setDesiredEmotion(desired)
 		setUnsure(router.query.emotionMode === 'unsure')
 		setCurrentState(String(router.query.currentState || ''))
-		setWindow(nextWindow)
+		setAvailableFrom(nextFrom)
+		setAvailableUntil(nextUntil)
 		setDistance(nextDistance)
-		setBudget(nextBudget)
 		setLocation(nextLocation)
 		const params = new URLSearchParams({
 			desiredEmotion: desired,
-			startWithinMinutes: String(nextWindow),
+			availableFromMinutes: String(nextFrom),
+			availableUntilMinutes: String(nextUntil),
 			maxDistanceKm: String(nextDistance),
 			latitude: String(nextLocation.latitude),
 			longitude: String(nextLocation.longitude),
 		})
-		if (nextBudget) params.set('maxBudget', nextBudget)
-		setLoading(true)
-		fetch(`/api/discovery/recommendations?${params}`)
-			.then(async (response) => {
-				const data = await response.json()
-				if (!response.ok) throw new Error(data.error)
-				setResults(data)
-			})
-			.catch((reason) => setError(reason.message))
-			.finally(() => setLoading(false))
+		const view = readDiscoveryView()
+		const targetCount =
+			view?.returnUrl === router.asPath
+				? Math.max(PAGE_SIZE, view.loadedResultCount || 0)
+				: PAGE_SIZE
+		void loadRecommendationPages(params, targetCount)
 	}, [queryReady, router.asPath])
 
-	const locate = () =>
-		navigator.geolocation?.getCurrentPosition(
+	const locate = () => {
+		if (!navigator.geolocation) {
+			setLocation(FALLBACK_LOCATION)
+			setLocationName('서울대입구역 기준')
+			return
+		}
+		navigator.geolocation.getCurrentPosition(
 			(position) => {
 				setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude })
-				setLocationName('현재 위치 기준')
+				setLocationName('현재 위치 주변')
 			},
 			() => {
-				setLocation(SEOUL)
-				setLocationName('위치 권한 없음 · 성수동 기준')
+				setLocation(FALLBACK_LOCATION)
+				setLocationName('위치 권한 없음 · 서울대입구역 기준')
 			}
 		)
+	}
+
+	useEffect(() => {
+		if (!router.isReady || router.query.latitude || restored.current) return
+		locate()
+	}, [router.isReady]) // eslint-disable-line react-hooks/exhaustive-deps
+
+	useEffect(() => {
+		if (!router.isReady || restored.current) return
+		const view = readDiscoveryView()
+		if (!view || router.asPath !== view.returnUrl) return
+		restored.current = true
+		setShowMap(view.showMap)
+		setLocationName(view.locationName)
+		restoreScroll.current = view.scrollY
+	}, [router.asPath, router.isReady])
+
+	useEffect(() => {
+		if (!results || restoreScroll.current == null) return
+		const y = restoreScroll.current
+		restoreScroll.current = null
+		window.setTimeout(() => window.scrollTo({ top: y }), 0)
+	}, [results])
+
+	useEffect(() => {
+		if (!results || !pendingResultScroll.current) return
+		pendingResultScroll.current = false
+		window.setTimeout(
+			() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }),
+			0
+		)
+	}, [results])
 
 	async function searchLocation() {
 		if (!locationQuery.trim()) return setError('지역이나 장소 이름을 입력해 주세요.')
 		setError('')
+		setPlaceResults([])
 		const response = await fetch(`/api/places/search?q=${encodeURIComponent(locationQuery)}`),
 			data = await response.json()
 		if (!response.ok) return setError(data.error)
 		const places: PlaceSearchResult[] = data.places || []
 		if (!places.length) return setError('검색된 장소가 없어요.')
-		const first = places[0]
-		setLocation({ latitude: first.latitude, longitude: first.longitude })
-		setLocationName(`${first.name} 기준`)
-		setPlaceResults(places.slice(1, 5))
+		setPlaceResults(places.slice(0, 6))
 	}
 
 	async function discover() {
 		const emotion = unsure ? inferredEmotion[currentState] : desiredEmotion
 		if (unsure && !currentState) return setError('지금 상태를 하나 골라 주세요.')
 		if (!emotion) return setError('원하는 감정을 먼저 골라 주세요.')
-		setLoading(true)
 		setError('')
 		const params = new URLSearchParams({
 			desiredEmotion: emotion,
-			startWithinMinutes: String(startWithinMinutes),
+			availableFromMinutes: String(availableFromMinutes),
+			availableUntilMinutes: String(availableUntilMinutes),
 			maxDistanceKm: String(maxDistanceKm),
 			latitude: String(location.latitude),
 			longitude: String(location.longitude),
 		})
 		if (currentState) params.set('currentState', currentState)
 		if (unsure) params.set('emotionMode', 'unsure')
-		if (maxBudget) params.set('maxBudget', maxBudget)
 		sessionStorage.setItem(
 			'discovery-intent',
 			JSON.stringify({
 				desiredEmotion: emotion,
 				currentState,
-				startWithinMinutes,
+				availableFromMinutes,
+				availableUntilMinutes,
 				maxDistanceKm,
-				maxBudget: maxBudget ? Number(maxBudget) : undefined,
+				latitude: location.latitude,
+				longitude: location.longitude,
 			})
 		)
-		await router.replace(`/?${params}`, undefined, { shallow: true })
-		try {
-			const response = await fetch(`/api/discovery/recommendations?${params}`),
-				data = await response.json()
-			if (!response.ok) throw new Error(data.error)
-			setResults(data)
-			window.setTimeout(
-				() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }),
-				0
-			)
-		} catch (reason) {
-			setError(reason instanceof Error ? reason.message : '추천을 불러오지 못했습니다.')
-		} finally {
-			setLoading(false)
-		}
+		if (mapRequested) params.set('view', 'map')
+		pendingResultScroll.current = true
+		const targetUrl = `/?${params}`
+		if (router.asPath === targetUrl) await loadRecommendationPages(params)
+		else await router.replace(targetUrl, undefined, { shallow: true })
 	}
 
-	const displayed = useMemo(
-		() => (showAll ? results?.all || [] : results?.recommended || []),
-		[results, showAll]
-	)
+	function rememberDiscoveryView() {
+		const emotion = unsure ? inferredEmotion[currentState] : desiredEmotion
+		if (!emotion) return
+		writeDiscoveryView({
+			intent: {
+				desiredEmotion: emotion,
+				currentState: currentState || undefined,
+				availableFromMinutes,
+				availableUntilMinutes,
+				maxDistanceKm,
+				latitude: location.latitude,
+				longitude: location.longitude,
+			},
+			currentState,
+			emotionMode: unsure ? 'unsure' : 'direct',
+			locationName,
+			showMap,
+			loadedResultCount: results?.items.length || PAGE_SIZE,
+			scrollY: window.scrollY,
+			returnUrl: router.asPath,
+		})
+	}
+
+	function createCourse() {
+		const emotion = unsure ? inferredEmotion[currentState] : desiredEmotion
+		if (!emotion) {
+			setError('원하는 감정을 먼저 골라 주세요.')
+			return
+		}
+		const intent = {
+			desiredEmotion: emotion,
+			currentState: currentState || undefined,
+			availableFromMinutes,
+			availableUntilMinutes,
+			maxDistanceKm,
+			latitude: location.latitude,
+			longitude: location.longitude,
+		}
+		sessionStorage.setItem('discovery-intent', JSON.stringify(intent))
+		writeDiscoveryView({
+			intent,
+			currentState,
+			emotionMode: unsure ? 'unsure' : 'direct',
+			locationName,
+			showMap,
+			loadedResultCount: results?.items.length || PAGE_SIZE,
+			scrollY: window.scrollY,
+			returnUrl: router.asPath,
+		})
+		void router.push('/course')
+	}
+
 	return (
 		<AppShell>
 			<Head>
-				<title>틈 — 지금 가능한 감정 경험</title>
+				<title>gava — 지금 가능한 감정 경험</title>
 			</Head>
 			<section className='bg-gradient-to-b from-[#e9f6d9] to-paper px-5 py-14 md:py-24'>
 				<div className='mx-auto max-w-5xl'>
 					<p className='mb-3 font-bold text-leaf'>
-						검색하다 지치기 전에, 지금의 나에게 맞는 한 가지
+						검색하다 지치기 전에, 지금의 나에게 맞는 오늘의 움직임
 					</p>
 					<h1 className='max-w-3xl text-4xl font-black leading-tight md:text-6xl'>
 						어떤 감정을
@@ -179,12 +367,12 @@ export default function Home() {
 						느끼고 싶나요?
 					</h1>
 					<p className='mt-5 max-w-2xl text-ink/60'>
-						원하는 감정과 오늘 비어 있는 좌석을 연결해, 몇 분 뒤 바로 시작할 경험을 찾아드려요.
+						원하는 감정과 비어 있는 좌석을 연결해, 한 가지 경험이나 짧은 코스를 만들어드려요.
 					</p>
 					<div className='mt-10 space-y-8 rounded-[2rem] bg-white p-6 shadow-xl md:p-10'>
 						<fieldset>
-							<legend className='text-xl font-black'>어떤 감정이 필요하신가요? *</legend>
-							<div className='mt-4 grid grid-cols-2 gap-2 md:grid-cols-3'>
+							{/* <legend className='text-xl font-black'>어떤 감정이 필요하신가요? *</legend> */}
+							<div className='grid grid-cols-2 gap-2 md:grid-cols-3'>
 								{emotions.map((item) => (
 									<button
 										key={item.value}
@@ -239,22 +427,23 @@ export default function Home() {
 								</div>
 							</fieldset>
 						)}
-						<div className='grid gap-4 md:grid-cols-2'>
-							<NumberLineSlider
-								label='언제 시작할까요?'
-								value={startWithinMinutes}
-								options={startWindows}
-								onChange={setWindow}
-							/>
+						<div className='grid gap-4'>
+							<div>
+								<ActivityTimeRange
+									fromMinutes={availableFromMinutes}
+									untilMinutes={availableUntilMinutes}
+									onChange={(from, until) => {
+										setAvailableFrom(from)
+										setAvailableUntil(until)
+									}}
+								/>
+							</div>
 							<NumberLineSlider
 								label='어디까지 이동할까요?'
 								value={maxDistanceKm}
 								options={distanceOptions}
 								onChange={setDistance}
 							/>
-							<div className='md:col-span-2'>
-								<BudgetNumberLine value={maxBudget} onChange={setBudget} />
-							</div>
 						</div>
 						<div>
 							<div className='flex flex-wrap items-center gap-3'>
@@ -268,7 +457,13 @@ export default function Home() {
 								<input
 									value={locationQuery}
 									onChange={(event) => setLocationQuery(event.target.value)}
-									placeholder='동네나 장소 직접 검색'
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault()
+											void searchLocation()
+										}
+									}}
+									placeholder='동네·역·장소 검색'
 									className='min-w-48 flex-1 rounded-full border px-4 py-3 text-sm'
 								/>
 								<button
@@ -276,7 +471,7 @@ export default function Home() {
 									onClick={searchLocation}
 									className='rounded-full border px-4 py-3 text-sm font-bold'
 								>
-									지역 검색
+									검색
 								</button>
 								<button
 									type='button'
@@ -296,7 +491,9 @@ export default function Home() {
 											onClick={() => {
 												setLocation({ latitude: place.latitude, longitude: place.longitude })
 												setLocationName(`${place.name} 기준`)
+												setLocationQuery('')
 												setPlaceResults([])
+												setError('')
 											}}
 											className='rounded-xl border p-3 text-left text-sm'
 										>
@@ -316,50 +513,66 @@ export default function Home() {
 					<div className='flex flex-wrap items-end justify-between gap-4'>
 						<div>
 							<p className='font-bold text-leaf'>지금 예약할 수 있어요</p>
-							<h2 className='mt-1 text-3xl font-black'>
-								오늘의 추천 {results.recommended.length}개
-							</h2>
+							<h2 className='mt-1 text-3xl font-black'>지금 가능한 경험 {results.total}개</h2>
+							<p className='mt-2 text-sm text-ink/55'>구미가 당기는 경험을 모두 찜해 보세요.</p>
 						</div>
-						<div className='flex gap-2'>
-							<button
-								onClick={() => setShowMap(!showMap)}
-								className='rounded-full border px-4 py-2 font-bold'
-							>
-								지도에서 보기
-							</button>
-							<button
-								onClick={() => setShowAll(!showAll)}
-								className='rounded-full border px-4 py-2 font-bold'
-							>
-								{showAll ? '추천만 보기' : `전체 ${results.all.length}개`}
-							</button>
-						</div>
+						<button
+							onClick={() => setShowMap(!showMap)}
+							className='rounded-full border px-4 py-2 font-bold'
+						>
+							{showMap ? '지도 접기' : '지도에서 보기'}
+						</button>
 					</div>
 					{showMap && (
 						<div className='mt-8'>
 							<MapCanvas
-								experiences={results.all}
-								onSelect={(item) => void router.push(`/experiences/${item.id}`)}
+								experiences={results.items}
+								onSelect={(item) => {
+									rememberDiscoveryView()
+									void router.push({
+										pathname: `/experiences/${item.id}`,
+										query: { returnTo: router.asPath },
+									})
+								}}
 							/>
 						</div>
 					)}
 					<div className='mt-8 grid gap-5 md:grid-cols-3'>
-						{displayed.map((item, index) => (
+						{results.items.map((item) => (
 							<RecommendationCard
 								key={item.id}
 								experience={item}
-								rank={showAll ? undefined : index + 1}
+								wished={wishlist.wishIds.includes(item.id)}
+								onToggleWish={() => wishlist.toggle(item.id)}
+								onOpen={rememberDiscoveryView}
+								returnTo={router.asPath}
 							/>
 						))}
 					</div>
-					{!displayed.length && (
+					{!results.items.length && (
 						<div className='mt-8 rounded-3xl bg-white p-10 text-center'>
 							<h3 className='font-black'>조건에 맞는 빈자리가 아직 없어요.</h3>
-							<p className='mt-2 text-ink/60'>거리나 시작 시간을 넓혀 다시 찾아보세요.</p>
+							<p className='mt-2 text-ink/60'>거리나 활동 시간대를 넓혀 다시 찾아보세요.</p>
+						</div>
+					)}
+					{results.items.length > 0 && (
+						<div ref={resultSentinel} className='py-8 text-center text-sm text-ink/50'>
+							{loadingMore
+								? '다음 경험을 불러오는 중…'
+								: results.nextOffset === null
+									? '조건에 맞는 경험을 모두 확인했어요.'
+									: '아래로 내리면 더 보여드려요.'}
 						</div>
 					)}
 				</section>
 			)}
+			<CourseWishlistBar
+				wishIds={wishlist.wishIds}
+				experiences={results?.items || []}
+				onRemove={wishlist.remove}
+				onClear={wishlist.clear}
+				onCreate={createCourse}
+			/>
 		</AppShell>
 	)
 }

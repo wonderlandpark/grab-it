@@ -11,7 +11,14 @@ module.exports = {
 				coral: '#ec8068',
 			},
 			fontFamily: {
-				sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'],
+				sans: [
+					'Pretendard Variable',
+					'Pretendard',
+					'system-ui',
+					'Segoe UI',
+					'Malgun Gothic',
+					'sans-serif',
+				],
 			},
 		},
 	},

@@ -16,7 +16,12 @@ export function QrTicket({ value }: { value: string }) {
 	const canvas = useRef<HTMLCanvasElement>(null),
 		[failed, setFailed] = useState(false)
 	useEffect(() => {
+		const source = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js'
 		let script = document.getElementById('qr-code-lib') as HTMLScriptElement | null
+		if (script && script.src !== source) {
+			script.remove()
+			script = null
+		}
 		const draw = () => {
 			if (canvas.current && window.QRCode)
 				window.QRCode.toCanvas(
@@ -31,11 +36,21 @@ export function QrTicket({ value }: { value: string }) {
 			if (!script) {
 				script = document.createElement('script')
 				script.id = 'qr-code-lib'
-				script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js'
+				script.src = source
+				script.async = true
+				script.crossOrigin = 'anonymous'
+				script.referrerPolicy = 'no-referrer'
 				document.head.appendChild(script)
 			}
 			script.addEventListener('load', draw, { once: true })
-			script.addEventListener('error', () => setFailed(true), { once: true })
+			script.addEventListener(
+				'error',
+				() => {
+					setFailed(true)
+					script?.remove()
+				},
+				{ once: true }
+			)
 		}
 	}, [value])
 	return (

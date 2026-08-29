@@ -43,12 +43,13 @@ export default function Me() {
 	return (
 		<AppShell>
 			<Head>
-				<title>내 정보 · 틈</title>
+				<title>내 정보 · gava</title>
 			</Head>
 			<div className='mx-auto max-w-4xl px-5 py-10'>
 				<header>
-					<p className='text-sm text-ink/50'>안녕하세요</p>
-					<h1 className='text-3xl font-black'>{session?.user?.name || '오늘의 여행자'}님</h1>
+					<p className='text-sm text-ink/50'>안녕하세요,</p>
+					<span className='text-3xl font-black'>{session?.user?.name || '오늘의 여행자'}</span>
+					<span className='pl-1 text-2xl font-bold'>님.</span>
 				</header>
 				<section className='mt-10'>
 					<div className='flex items-center justify-between'>

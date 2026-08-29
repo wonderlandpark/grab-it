@@ -1,9 +1,12 @@
 import Head from 'next/head'
 import Image from 'next/image'
-import { signIn, useSession } from 'next-auth/react'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
 import { useEffect, useRef, useState } from 'react'
+import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
+import { ExperiencePrice } from '@/components/experience/ExperiencePrice'
 import { emotions, type ExperienceDetail } from '@/types/domain'
 
 const dateTime = (value: string) =>
@@ -20,12 +23,20 @@ const PENDING_KEY = 'pending-booking'
 export default function ExperiencePage() {
 	const router = useRouter(),
 		{ status } = useSession(),
-		resumed = useRef(false)
+		resumed = useRef(false),
+		wishlist = useCourseWishlist()
 	const [experience, setExperience] = useState<ExperienceDetail | null>(null),
 		[selectedSlot, setSlot] = useState(''),
 		[error, setError] = useState(''),
 		[booking, setBooking] = useState(false),
 		[loginModal, setLoginModal] = useState(false)
+	const safeReturnTo =
+		typeof router.query.returnTo === 'string' &&
+		router.query.returnTo.startsWith('/') &&
+		!router.query.returnTo.startsWith('//')
+			? router.query.returnTo
+			: null
+	const courseReturnTo = safeReturnTo?.startsWith('/course') ? safeReturnTo : null
 
 	useEffect(() => {
 		if (!router.isReady) return
@@ -35,7 +46,14 @@ export default function ExperiencePage() {
 				if (!response.ok) throw new Error(data.error)
 				setExperience(data)
 				const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null')
-				setSlot(pending?.experienceId === data.id ? pending.slotId : data.slots[0]?.id || '')
+				const requestedSlot = typeof router.query.slotId === 'string' ? router.query.slotId : ''
+				setSlot(
+					data.slots.some((slot: { id: string }) => slot.id === requestedSlot)
+						? requestedSlot
+						: pending?.experienceId === data.id
+							? pending.slotId
+							: data.slots[0]?.id || ''
+				)
 			})
 			.catch((e) => setError(e.message))
 	}, [router.isReady, router.query.id])
@@ -58,7 +76,8 @@ export default function ExperiencePage() {
 		setBooking(false)
 		if (!response.ok) return setError(data.error)
 		sessionStorage.removeItem(PENDING_KEY)
-		await router.push(`/bookings/${data.id}`)
+		const returnTo = courseReturnTo ? `?returnTo=${encodeURIComponent(courseReturnTo)}` : ''
+		await router.push(`/bookings/${data.id}${returnTo}`)
 	}
 
 	useEffect(() => {
@@ -89,18 +108,6 @@ export default function ExperiencePage() {
 		void submitBooking()
 	}
 
-	async function guestContinue() {
-		const result = await signIn('credentials', { redirect: false })
-		if (result?.error) return setError('게스트 로그인을 시작하지 못했습니다.')
-		setLoginModal(false)
-		await submitBooking()
-	}
-	async function kakaoContinue() {
-		await signIn('kakao', {
-			callbackUrl: `${window.location.origin}${router.asPath.split('?')[0]}?resumeBooking=1`,
-		})
-	}
-
 	if (!experience)
 		return (
 			<AppShell>
@@ -110,10 +117,15 @@ export default function ExperiencePage() {
 	return (
 		<AppShell>
 			<Head>
-				<title>{experience.title} · 틈</title>
+				<title>{experience.title} · gava</title>
 			</Head>
 			<article className='mx-auto grid max-w-6xl gap-8 px-5 py-10 md:grid-cols-[1.2fr_.8fr]'>
 				<section>
+					{safeReturnTo && (
+						<Link href={safeReturnTo} className='mb-5 inline-block font-bold text-ink/60'>
+							{courseReturnTo ? '← 코스로 돌아가기' : '← 검색 결과로'}
+						</Link>
+					)}
 					<div className='relative grid aspect-[16/9] place-items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-mist to-[#f6e8ca]'>
 						{experience.mediaUrl ? (
 							<Image
@@ -128,7 +140,16 @@ export default function ExperiencePage() {
 						)}
 					</div>
 					<p className='mt-8 font-bold text-leaf'>{experience.space.name}</p>
-					<h1 className='mt-2 text-4xl font-black'>{experience.title}</h1>
+					<div className='mt-2 flex items-start justify-between gap-4'>
+						<h1 className='text-4xl font-black'>{experience.title}</h1>
+						<button
+							type='button'
+							onClick={() => wishlist.toggle(experience.id)}
+							className={`shrink-0 rounded-full px-4 py-2 font-black ${wishlist.wishIds.includes(experience.id) ? 'bg-coral text-white' : 'border bg-white'}`}
+						>
+							{wishlist.wishIds.includes(experience.id) ? '♥ 찜' : '♡ 찜'}
+						</button>
+					</div>
 					<p className='mt-4 leading-7 text-ink/65'>{experience.description}</p>
 					<div className='mt-5 flex flex-wrap gap-2'>
 						{experience.ambienceTags.map((tag) => (
@@ -157,10 +178,13 @@ export default function ExperiencePage() {
 				</section>
 				<aside>
 					<div className='sticky top-24 rounded-[2rem] bg-white p-6 shadow-lg'>
-						<p className='text-sm font-bold text-coral'>체험용 · 현장결제 예정</p>
-						<p className='mt-1 text-2xl font-black'>
-							{experience.priceWon ? `${experience.priceWon.toLocaleString()}원` : '무료'}
-						</p>
+						<p className='text-sm font-bold text-coral'>현장결제 예정</p>
+						<div className='mt-1'>
+							<ExperiencePrice
+								priceWon={experience.priceWon}
+								originalPriceWon={experience.originalPriceWon}
+							/>
+						</div>
 						<p className='mt-1 text-sm'>{experience.durationMinutes}분 경험</p>
 						<h2 className='mt-7 font-black'>시작 시간 선택</h2>
 						<div className='mt-3 space-y-2'>
@@ -197,19 +221,18 @@ export default function ExperiencePage() {
 				>
 					<div className='w-full max-w-md rounded-[2rem] bg-white p-7 shadow-2xl'>
 						<h2 className='text-2xl font-black'>예약을 저장하려면 계속해 주세요.</h2>
-						<p className='mt-2 text-sm text-ink/55'>선택한 경험과 시간은 그대로 유지됩니다.</p>
-						<button
-							onClick={guestContinue}
-							className='mt-7 w-full rounded-2xl bg-leaf p-4 font-black text-white'
+						<p className='mt-2 text-sm text-ink/55'>찜한 경험과 시간은 그대로 유지됩니다.</p>
+						<Link
+							href={{
+								pathname: '/login',
+								query: {
+									callbackUrl: `${router.asPath}${router.asPath.includes('?') ? '&' : '?'}resumeBooking=1`,
+								},
+							}}
+							className='mt-7 block w-full rounded-2xl bg-leaf p-4 text-center font-black text-white'
 						>
-							게스트로 체험하기
-						</button>
-						<button
-							onClick={kakaoContinue}
-							className='mt-3 w-full rounded-2xl bg-[#FEE500] p-4 font-black text-[#191919]'
-						>
-							카카오로 계속하기
-						</button>
+							로그인 페이지로 계속하기
+						</Link>
 						<button
 							onClick={() => setLoginModal(false)}
 							className='mt-4 w-full text-sm text-ink/45'

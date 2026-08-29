@@ -1,29 +1,24 @@
-import { getProviders, signIn } from 'next-auth/react'
-import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 
-export function SignInButton({ className = '' }: { className?: string }) {
-	const [loading, setLoading] = useState(false)
-
-	async function handleSignIn() {
-		setLoading(true)
-		try {
-			const providers = await getProviders()
-			const provider = providers?.kakao ? 'kakao' : providers?.credentials ? 'credentials' : null
-			if (!provider) throw new Error('로그인 설정이 필요합니다')
-			await signIn(provider, { callbackUrl: '/' })
-		} finally {
-			setLoading(false)
-		}
-	}
+export function SignInButton({
+	className = '',
+	label = '로그인하기',
+	callbackUrl,
+}: {
+	className?: string
+	label?: string
+	callbackUrl?: string
+}) {
+	const router = useRouter()
+	const destination = callbackUrl || router.asPath || '/'
 
 	return (
-		<button
-			type='button'
-			onClick={handleSignIn}
-			disabled={loading}
-			className={`rounded-2xl bg-[#FEE500] px-5 py-3 font-semibold text-[#191919] disabled:opacity-60 ${className}`}
+		<Link
+			href={{ pathname: '/login', query: { callbackUrl: destination } }}
+			className={`inline-block rounded-2xl bg-[#FEE500] px-5 py-3 font-semibold text-[#191919] ${className}`}
 		>
-			{loading ? '로그인 연결 중…' : '카카오로 시작하기'}
-		</button>
+			{label}
+		</Link>
 	)
 }

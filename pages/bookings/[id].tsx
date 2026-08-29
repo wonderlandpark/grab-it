@@ -1,4 +1,5 @@
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
@@ -63,9 +64,18 @@ export default function BookingPage() {
 		)
 	const checkInUrl =
 		typeof window === 'undefined' ? '' : `${window.location.origin}/check-in/${booking.qrToken}`
+	const courseReturnTo =
+		typeof router.query.returnTo === 'string' && router.query.returnTo.startsWith('/course')
+			? router.query.returnTo
+			: null
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-2xl px-5 py-10'>
+				{courseReturnTo && (
+					<Link href={courseReturnTo} className='mb-6 inline-block font-bold text-ink/60'>
+						← 코스로 돌아가기
+					</Link>
+				)}
 				<p className='text-sm font-bold text-leaf'>예약 티켓</p>
 				<h1 className='mt-2 text-3xl font-black'>{booking.slot.experience.title}</h1>
 				<div className='mt-6 rounded-[2rem] bg-white p-7 shadow-lg'>
@@ -73,7 +83,7 @@ export default function BookingPage() {
 					<p className='mt-1 text-ink/60'>
 						{booking.slot.experience.space.name} · {booking.slot.experience.space.address}
 					</p>
-					<p className='mt-2 text-xs font-bold text-coral'>체험용 · 현장결제 예정</p>
+					<p className='mt-2 text-xs font-bold text-coral'>현장결제 예정</p>
 					<div className='my-7 border-t border-dashed' />
 					{booking.status === 'CONFIRMED' && checkInUrl && (
 						<>

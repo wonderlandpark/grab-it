@@ -3,8 +3,7 @@ import { useRouter } from 'next/router'
 
 const items = [
 	{ href: '/', label: '홈', icon: '⌂' },
-	{ href: '/?view=map', label: '지도', icon: '⌖' },
-	{ href: '/me', label: '예약', icon: '▣' },
+	{ href: '/me', label: '내 예약', icon: '▣' },
 	{ href: '/partner', label: '내 정보', icon: '◡' },
 ]
 
@@ -15,9 +14,7 @@ export function BottomNav() {
 		<nav className='safe-bottom fixed inset-x-0 bottom-0 z-50 border-t border-black/5 bg-paper/95 px-5 pt-2 backdrop-blur md:hidden'>
 			<div className='mx-auto flex max-w-md items-center justify-around'>
 				{items.map((item) => {
-					const active =
-						router.pathname === item.href ||
-						(item.href !== '/' && router.pathname.startsWith(item.href))
+					const active = router.pathname === item.href
 					return (
 						<Link
 							key={item.href}

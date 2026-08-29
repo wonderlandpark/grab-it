@@ -19,13 +19,6 @@ export const currentStates = [
 	{ value: 'BORED', label: '지루해요' },
 ] as const
 
-export const startWindows = [
-	{ value: 30, label: '30분 이내' },
-	{ value: 60, label: '1시간 이내' },
-	{ value: 180, label: '3시간 이내' },
-	{ value: 1440, label: '오늘 안에' },
-] as const
-
 export const spaceTypes = [
 	['WORKSHOP', '공방·원데이 클래스'],
 	['CAFE', '카페'],
@@ -65,6 +58,7 @@ export interface ExperienceRecommendation {
 	description: string
 	durationMinutes: number
 	priceWon: number
+	originalPriceWon: number | null
 	emotions: EmotionValue[]
 	ambienceTags: string[]
 	mediaUrl: string | null
@@ -117,9 +111,30 @@ export interface BookingTicket {
 export interface DiscoveryIntent {
 	currentState?: string
 	desiredEmotion: EmotionValue
-	startWithinMinutes: 30 | 60 | 180 | 1440
+	availableFromMinutes: number
+	availableUntilMinutes: number
 	latitude: number
 	longitude: number
 	maxDistanceKm: number
-	maxBudget?: number
+}
+
+export interface CourseItem {
+	experience: ExperienceRecommendation
+	slot: SlotSummary
+	travelMinutes: number
+	waitMinutes: number
+}
+
+export interface CourseRecommendation {
+	signature: string
+	items: CourseItem[]
+	totalTravelMinutes: number
+	totalWaitMinutes: number
+	totalPriceWon: number
+	totalOriginalPriceWon: number
+	totalDiscountWon: number
+	totalDistanceMeters: number
+	startsAt: string
+	endsAt: string
+	omitted: Array<{ experienceId: string; experienceTitle?: string; reason: string }>
 }

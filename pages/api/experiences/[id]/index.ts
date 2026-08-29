@@ -46,37 +46,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			capacity: slot.capacity,
 			availableSeats: slot.capacity - slot.bookings.length,
 		}))
-	return res
-		.status(200)
-		.json({
-			id: experience.id,
-			title: experience.title,
-			description: experience.description,
-			durationMinutes: experience.durationMinutes,
-			priceWon: experience.priceWon,
-			emotions: experience.emotions.map((item) => item.emotion),
-			ambienceTags: experience.ambienceTags,
-			mediaUrl: experience.media[0]
-				? `/api/media/${encodeURIComponent(experience.media[0].key)}`
-				: null,
-			score: 0,
-			rules: experience.space.rules,
-			space: {
-				id: experience.space.id,
-				name: experience.space.name,
-				typeCode: experience.space.typeCode,
-				address: experience.space.roadAddress || experience.space.address,
-				latitude: experience.space.lat,
-				longitude: experience.space.lng,
-				distanceMeters: 0,
-			},
-			slots,
-			reviews: reviews.map((review) => ({
-				id: review.id,
-				afterEmotion: review.afterEmotion,
-				highlightTags: review.highlightTags,
-				body: review.body,
-				createdAt: review.createdAt.toISOString(),
-			})),
-		})
+	return res.status(200).json({
+		id: experience.id,
+		title: experience.title,
+		description: experience.description,
+		durationMinutes: experience.durationMinutes,
+		priceWon: experience.priceWon,
+		originalPriceWon: experience.originalPriceWon,
+		emotions: experience.emotions.map((item) => item.emotion),
+		ambienceTags: experience.ambienceTags,
+		mediaUrl: experience.media[0]
+			? `/api/media/${encodeURIComponent(experience.media[0].key)}`
+			: null,
+		score: 0,
+		rules: experience.space.rules,
+		space: {
+			id: experience.space.id,
+			name: experience.space.name,
+			typeCode: experience.space.typeCode,
+			address: experience.space.roadAddress || experience.space.address,
+			latitude: experience.space.lat,
+			longitude: experience.space.lng,
+			distanceMeters: 0,
+		},
+		slots,
+		reviews: reviews.map((review) => ({
+			id: review.id,
+			afterEmotion: review.afterEmotion,
+			highlightTags: review.highlightTags,
+			body: review.body,
+			createdAt: review.createdAt.toISOString(),
+		})),
+	})
 }

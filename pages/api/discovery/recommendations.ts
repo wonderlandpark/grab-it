@@ -14,15 +14,19 @@ const emotions = new Set([
 	'FOCUS',
 	'ENERGY',
 ])
-const windows = new Set([30, 60, 180, 1440])
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 	if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 	const latitude = Number(req.query.latitude),
 		longitude = Number(req.query.longitude)
 	const desiredEmotion = String(req.query.desiredEmotion || '') as Emotion
-	const windowMinutes = Number(req.query.startWithinMinutes)
+	const legacyWindow = Number(req.query.startWithinMinutes)
+	const availableFromMinutes = Number(req.query.availableFromMinutes ?? 0)
+	const availableUntilMinutes = Number(
+		req.query.availableUntilMinutes ?? (Number.isFinite(legacyWindow) ? legacyWindow : 180)
+	)
 	const maxDistanceKm = Number(req.query.maxDistanceKm || 3)
+	const offset = Number(req.query.offset || 0)
+	const limit = Number(req.query.limit || 12)
 	const maxBudget =
 		req.query.maxBudget === undefined || req.query.maxBudget === ''
 			? undefined
@@ -30,14 +34,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	if (
 		!isValidCoordinates(latitude, longitude) ||
 		!emotions.has(desiredEmotion) ||
-		!windows.has(windowMinutes) ||
+		!Number.isInteger(availableFromMinutes) ||
+		!Number.isInteger(availableUntilMinutes) ||
+		availableFromMinutes < 0 ||
+		availableUntilMinutes > 1440 ||
+		availableUntilMinutes - availableFromMinutes < 30 ||
 		!(maxDistanceKm > 0) ||
+		!Number.isInteger(offset) ||
+		offset < 0 ||
+		!Number.isInteger(limit) ||
+		limit < 1 ||
+		limit > 24 ||
 		(maxBudget !== undefined && maxBudget < 0)
 	)
 		return res.status(400).json({ error: '추천 조건을 다시 확인해 주세요.' })
 
-	const now = new Date(),
-		latest = new Date(now.getTime() + windowMinutes * 60000)
+	const now = new Date()
+	const earliest = new Date(now.getTime() + availableFromMinutes * 60000)
+	const latest = new Date(now.getTime() + availableUntilMinutes * 60000)
 	const experiences = await prisma.experience.findMany({
 		where: {
 			status: 'PUBLISHED',
@@ -47,7 +61,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				owner: { isDemo: false, partnerApplication: { status: 'APPROVED' } },
 			},
 			slots: {
-				some: { status: 'OPEN', startsAt: { gte: now, lte: latest }, bookingClosesAt: { gt: now } },
+				some: {
+					status: 'OPEN',
+					startsAt: { gte: earliest },
+					endsAt: { lte: latest },
+					bookingClosesAt: { gt: now },
+				},
 			},
 		},
 		include: {
@@ -57,7 +76,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			slots: {
 				where: {
 					status: 'OPEN',
-					startsAt: { gte: now, lte: latest },
+					startsAt: { gte: earliest },
+					endsAt: { lte: latest },
 					bookingClosesAt: { gt: now },
 				},
 				orderBy: { startsAt: 'asc' },
@@ -90,10 +110,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				distanceMeters,
 				maxDistanceMeters: maxDistanceKm * 1000,
 				startsAt: slot.startsAt,
-				now,
-				windowMinutes,
-				priceWon: experience.priceWon,
-				maxBudget,
+				earliest,
+				latest,
 			})
 			return [
 				{
@@ -102,6 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 					description: experience.description,
 					durationMinutes: experience.durationMinutes,
 					priceWon: experience.priceWon,
+					originalPriceWon: experience.originalPriceWon,
 					emotions: experience.emotions.map((item) => item.emotion),
 					ambienceTags: experience.ambienceTags,
 					mediaUrl: experience.media[0]
@@ -133,7 +152,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				b.score - a.score ||
 				new Date(a.nextSlot.startsAt).getTime() - new Date(b.nextSlot.startsAt).getTime()
 		)
-		.slice(0, 50)
 
-	return res.status(200).json({ recommended: items.slice(0, 3), all: items })
+	const page = items.slice(offset, offset + limit)
+	const nextOffset = offset + page.length < items.length ? offset + page.length : null
+
+	return res.status(200).json({ items: page, total: items.length, nextOffset })
 }

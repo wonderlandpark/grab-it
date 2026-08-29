@@ -204,17 +204,18 @@ model SpaceMedia {
 }
 
 model Experience {
-  id              String           @id @default(cuid())
-  spaceId         String
-  title           String           @db.VarChar(120)
-  description     String           @db.VarChar(1000)
-  durationMinutes Int
-  priceWon        Int              @default(0)
-  ambienceTags    String[]
-  status          ExperienceStatus @default(PUBLISHED)
-  isDemoPublic    Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id               String           @id @default(cuid())
+  spaceId          String
+  title            String           @db.VarChar(120)
+  description      String           @db.VarChar(1000)
+  durationMinutes  Int
+  priceWon         Int              @default(0)
+  originalPriceWon Int?
+  ambienceTags     String[]
+  status           ExperienceStatus @default(PUBLISHED)
+  isDemoPublic     Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   space    Space               @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   emotions ExperienceEmotion[]

@@ -17,15 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const partner = await requirePartner(req, res)
 	if (!partner) return
 	if (req.method === 'GET')
-		return res
-			.status(200)
-			.json(
-				await prisma.experience.findMany({
-					where: { space: { ownerId: partner.user.id } },
-					include: { space: true, emotions: true },
-					orderBy: { createdAt: 'desc' },
-				})
-			)
+		return res.status(200).json(
+			await prisma.experience.findMany({
+				where: { space: { ownerId: partner.user.id } },
+				include: { space: true, emotions: true },
+				orderBy: { createdAt: 'desc' },
+			})
+		)
 	if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 	const space = await prisma.space.findFirst({
 		where: { id: String(req.body?.spaceId || ''), ownerId: partner.user.id },
@@ -33,7 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const title = String(req.body?.title || '').trim(),
 		description = String(req.body?.description || '').trim(),
 		durationMinutes = Number(req.body?.durationMinutes),
-		priceWon = Number(req.body?.priceWon || 0)
+		priceWon = Number(req.body?.priceWon || 0),
+		originalPriceWon = req.body?.originalPriceWon ? Number(req.body.originalPriceWon) : null
 	const emotions = Array.isArray(req.body?.emotions)
 		? ([
 				...new Set(
@@ -59,6 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		durationMinutes > 1440 ||
 		!Number.isInteger(priceWon) ||
 		priceWon < 0 ||
+		(originalPriceWon !== null &&
+			(!Number.isInteger(originalPriceWon) || originalPriceWon <= priceWon)) ||
 		emotions.length === 0
 	)
 		return res.status(400).json({ error: '경험 정보를 확인해 주세요.' })
@@ -69,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			description: description.slice(0, 1000),
 			durationMinutes,
 			priceWon,
+			originalPriceWon,
 			ambienceTags,
 			emotions: { create: emotions.map((emotion) => ({ emotion })) },
 			status: partner.user.isDemo ? 'DRAFT' : 'PUBLISHED',

@@ -7,7 +7,12 @@ import { Brand } from '@/components/layout/Brand'
 export default function LoginPage() {
 	const { status } = useSession()
 	const router = useRouter()
-	const callbackUrl = typeof router.query.callbackUrl === 'string' ? router.query.callbackUrl : '/'
+	const requestedCallback =
+		typeof router.query.callbackUrl === 'string' ? router.query.callbackUrl : '/'
+	const callbackUrl =
+		requestedCallback.startsWith('/') && !requestedCallback.startsWith('//')
+			? requestedCallback
+			: '/'
 
 	useEffect(() => {
 		if (status === 'authenticated') void router.replace(callbackUrl)

@@ -19,6 +19,25 @@ function cleanTitle(value: string) {
 	return value.replace(/<[^>]+>/g, '').replaceAll('&amp;', '&')
 }
 
+function normalizePlaceName(value: string) {
+	return cleanTitle(value).replace(/\s+/g, '').toLocaleLowerCase('ko-KR')
+}
+
+function placeSearchScore(item: NaverItem, query: string) {
+	const name = normalizePlaceName(item.title)
+	const normalizedQuery = normalizePlaceName(query)
+	let score = 0
+
+	if (name === normalizedQuery) score += 100
+	else if (name.startsWith(normalizedQuery)) score += 80
+	else if (name.includes(normalizedQuery)) score += 60
+
+	if (item.category?.includes('지하철역')) score += 30
+	if (normalizedQuery.endsWith('역') && name.startsWith(normalizedQuery)) score += 20
+
+	return score
+}
+
 function naverCoordinate(value: string, latitude: boolean) {
 	const parsed = Number(value)
 	if (!Number.isFinite(parsed)) return null
@@ -54,24 +73,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		})
 		if (!response.ok) throw new ApiError(502, '장소 검색에 실패했습니다')
 		const data = (await response.json()) as { items?: NaverItem[] }
-		const places = (data.items ?? []).flatMap((item) => {
-			const longitude = naverCoordinate(item.mapx, false)
-			const latitude = naverCoordinate(item.mapy, true)
-			if (latitude === null || longitude === null) return []
-			return [
-				{
-					id: createHash('sha1')
-						.update(item.link || `${item.title}:${item.address}:${item.mapx}:${item.mapy}`)
-						.digest('hex'),
-					name: cleanTitle(item.title),
-					category: item.category || null,
-					address: item.address || null,
-					roadAddress: item.roadAddress || null,
-					latitude,
-					longitude,
-				},
-			]
-		})
+		const places = [...(data.items ?? [])]
+			.sort((left, right) => placeSearchScore(right, query) - placeSearchScore(left, query))
+			.flatMap((item) => {
+				const longitude = naverCoordinate(item.mapx, false)
+				const latitude = naverCoordinate(item.mapy, true)
+				if (latitude === null || longitude === null) return []
+				return [
+					{
+						id: createHash('sha1')
+							.update(item.link || `${item.title}:${item.address}:${item.mapx}:${item.mapy}`)
+							.digest('hex'),
+						name: cleanTitle(item.title),
+						category: item.category || null,
+						address: item.address || null,
+						roadAddress: item.roadAddress || null,
+						latitude,
+						longitude,
+					},
+				]
+			})
 		res.status(200).json({ places })
 	} catch (error) {
 		handleApiError(error, res)

@@ -13,6 +13,7 @@ export default function NewExperience() {
 			description: '',
 			durationMinutes: '60',
 			priceWon: '0',
+			originalPriceWon: '',
 			emotions: [] as string[],
 			ambienceTags: '',
 		})
@@ -34,6 +35,7 @@ export default function NewExperience() {
 					ambienceTags: form.ambienceTags.split(',').map((t) => t.trim()),
 					durationMinutes: Number(form.durationMinutes),
 					priceWon: Number(form.priceWon),
+					originalPriceWon: form.originalPriceWon ? Number(form.originalPriceWon) : null,
 				}),
 			}),
 			data = await r.json()
@@ -78,7 +80,7 @@ export default function NewExperience() {
 							className='mt-2 w-full rounded-xl border p-3'
 						/>
 					</label>
-					<div className='grid grid-cols-2 gap-3'>
+					<div className='grid gap-3 sm:grid-cols-3'>
 						<label className='font-bold'>
 							소요 시간(분)
 							<input
@@ -90,12 +92,23 @@ export default function NewExperience() {
 							/>
 						</label>
 						<label className='font-bold'>
-							현장 결제 금액
+							판매가
 							<input
 								type='number'
 								min='0'
 								value={form.priceWon}
 								onChange={(e) => setForm({ ...form, priceWon: e.target.value })}
+								className='mt-2 w-full rounded-xl border p-3'
+							/>
+						</label>
+						<label className='font-bold'>
+							정상가 <span className='font-normal text-ink/40'>선택</span>
+							<input
+								type='number'
+								min='0'
+								value={form.originalPriceWon}
+								onChange={(e) => setForm({ ...form, originalPriceWon: e.target.value })}
+								placeholder='할인 전 금액'
 								className='mt-2 w-full rounded-xl border p-3'
 							/>
 						</label>

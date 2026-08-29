@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+	font-family: 'Pretendard Variable';
+	src: url('/fonts/PretendardVariable.woff2') format('woff2');
+	font-weight: 45 920;
+	font-style: normal;
+	font-display: swap;
+}
+
 :root {
 	color-scheme: light;
 	font-synthesis: none;
@@ -21,7 +29,16 @@ body,
 body {
 	background: #f7f4ed;
 	color: #27332f;
-	font-family: Pretendard, 'Apple SD Gothic Neo', system-ui, sans-serif;
+	font-family:
+		'Pretendard Variable',
+		Pretendard,
+		-apple-system,
+		BlinkMacSystemFont,
+		system-ui,
+		'Segoe UI',
+		'Apple SD Gothic Neo',
+		'Malgun Gothic',
+		sans-serif;
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -115,4 +132,72 @@ select:focus-visible {
 	border-radius: 50%;
 	background: #2f7764;
 	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+}
+
+.time-range {
+	position: relative;
+	height: 24px;
+}
+
+.time-range-track {
+	position: absolute;
+	top: 9px;
+	left: 0;
+	width: 100%;
+	height: 6px;
+	border-radius: 999px;
+	background: linear-gradient(
+		to right,
+		#d5ddd9 0 var(--time-range-start),
+		#2f7764 var(--time-range-start) var(--time-range-end),
+		#d5ddd9 var(--time-range-end) 100%
+	);
+}
+
+.time-range-input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 24px;
+	margin: 0;
+	pointer-events: none;
+	appearance: none;
+	-webkit-appearance: none;
+	background: transparent;
+}
+
+.time-range-input::-webkit-slider-runnable-track {
+	height: 6px;
+	background: transparent;
+}
+
+.time-range-input::-moz-range-track {
+	height: 6px;
+	background: transparent;
+}
+
+.time-range-input::-webkit-slider-thumb {
+	width: 24px;
+	height: 24px;
+	margin-top: -9px;
+	pointer-events: auto;
+	appearance: none;
+	-webkit-appearance: none;
+	border: 4px solid white;
+	border-radius: 50%;
+	background: #2f7764;
+	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	cursor: grab;
+}
+
+.time-range-input::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	pointer-events: auto;
+	border: 4px solid white;
+	border-radius: 50%;
+	background: #2f7764;
+	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	cursor: grab;
 }
