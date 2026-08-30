@@ -26,12 +26,8 @@ export function EmotionOptionButton({
 			type='button'
 			aria-pressed={selected}
 			className={`relative h-24 min-w-0 overflow-hidden rounded-[50%] border-[3px] border-ink px-3 text-center md:h-28 md:px-8 ${
-				selected
-					? 'btn-chip btn-chip-selected shadow-md'
-					: dashed
-						? 'btn-chip border-dashed'
-						: 'btn-chip'
-			} ${className}`}
+				selected ? 'btn-chip btn-chip-selected shadow-md' : 'btn-chip'
+			} ${dashed ? 'border-dashed' : ''} ${className}`}
 			{...buttonProps}
 		>
 			<span
