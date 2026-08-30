@@ -185,7 +185,7 @@ function BookingMomentRow({
 				<BookingEmotionIcon booking={booking} completed={completed} cancelled={cancelled} />
 				{connectToNext && (
 					<span
-						className={`absolute -bottom-7 left-1/2 top-10 w-px -translate-x-1/2 ${completed ? 'bg-glow' : cancelled ? 'bg-ink/15' : 'bg-action/35'}`}
+						className='absolute -bottom-7 left-1/2 top-10 w-px -translate-x-1/2 bg-action/35'
 					/>
 				)}
 			</div>
