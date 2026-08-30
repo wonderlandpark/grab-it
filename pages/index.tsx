@@ -354,7 +354,7 @@ export default function Home() {
 	return (
 		<AppShell>
 			<Head>
-				<title>gava — 지금 가능한 감정 경험</title>
+				<title>grabit — 지금 가능한 감정 경험</title>
 			</Head>
 			<section className='bg-gradient-to-b from-[#e9f6d9] to-paper px-5 py-14 md:py-24'>
 				<div className='mx-auto max-w-5xl'>

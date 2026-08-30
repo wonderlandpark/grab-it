@@ -66,7 +66,7 @@ export function RecommendationCard({
 								{time(experience.nextSlot.startsAt)} · {experience.durationMinutes}분
 							</p>
 							<p className='text-xs text-coral'>
-								지금 {experience.nextSlot.availableSeats}자리 남음
+								{experience.nextSlot.availableSeats}자리 남음
 							</p>
 						</div>
 						<ExperiencePrice

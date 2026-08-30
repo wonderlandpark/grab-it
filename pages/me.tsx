@@ -43,7 +43,7 @@ export default function Me() {
 	return (
 		<AppShell>
 			<Head>
-				<title>내 정보 · gava</title>
+				<title>내 정보 · grabit</title>
 			</Head>
 			<div className='mx-auto max-w-4xl px-5 py-10'>
 				<header>

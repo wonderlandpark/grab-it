@@ -111,7 +111,7 @@ export default function CoursePage() {
 	return (
 		<AppShell>
 			<Head>
-				<title>오늘의 코스 · GAVA</title>
+				<title>오늘의 코스 · grabit</title>
 			</Head>
 			<div className='mx-auto max-w-6xl px-5 py-8'>
 				{selectedCourse ? (

@@ -117,7 +117,7 @@ export default function ExperiencePage() {
 	return (
 		<AppShell>
 			<Head>
-				<title>{experience.title} · gava</title>
+				<title>{experience.title} · grabit</title>
 			</Head>
 			<article className='mx-auto grid max-w-6xl gap-8 px-5 py-10 md:grid-cols-[1.2fr_.8fr]'>
 				<section>

@@ -55,13 +55,13 @@ async function main() {
 				ambienceTags: ['몰입', '햇빛', '손으로 만들기'],
 				emotions: ['CALM', 'REFRESH', 'FOCUS'],
 				starts: [95, 300, 900],
-				capacity: 100,
+				capacities: [2, 4, 1],
 			},
 		},
 		{
 			space: {
 				id: 'space-bookstore',
-				name: '샤로수길 gava 독립서점',
+				name: '샤로수길 grabit 독립서점',
 				description: '혼자여도 외롭지 않은 조용한 동네 서점',
 				typeCode: 'BOOKSTORE',
 				address: '서울 관악구 봉천동',
@@ -80,7 +80,7 @@ async function main() {
 				ambienceTags: ['조용함', '창가', '사람 온기'],
 				emotions: ['CALM', 'COMFORT', 'FOCUS'],
 				starts: [25, 120, 480],
-				capacity: 100,
+				capacities: [6, 3, 8],
 			},
 		},
 		{
@@ -105,7 +105,7 @@ async function main() {
 				ambienceTags: ['움직임', '해방감', '소규모'],
 				emotions: ['ENERGY', 'LIBERATION', 'REFRESH'],
 				starts: [180, 360, 600],
-				capacity: 100,
+				capacities: [3, 5, 2],
 			},
 		},
 		{
@@ -130,7 +130,7 @@ async function main() {
 				ambienceTags: ['낯선 자극', '음악', '어두운 공간'],
 				emotions: ['AWE', 'EXCITEMENT', 'REFRESH'],
 				starts: [150, 720],
-				capacity: 100,
+				capacities: [12, 6],
 			},
 		},
 		{
@@ -155,7 +155,7 @@ async function main() {
 				ambienceTags: ['손으로 만들기', '몰입', '바다색'],
 				emotions: ['CALM', 'REFRESH', 'FOCUS'],
 				starts: [35, 240, 600],
-				capacity: 100,
+				capacities: [2, 5, 1],
 			},
 		},
 		{
@@ -180,7 +180,7 @@ async function main() {
 				ambienceTags: ['움직임', '호흡', '해방감'],
 				emotions: ['ENERGY', 'LIBERATION', 'REFRESH'],
 				starts: [120, 330, 720],
-				capacity: 100,
+				capacities: [4, 2, 6],
 			},
 		},
 		{
@@ -205,7 +205,7 @@ async function main() {
 				ambienceTags: ['조용함', '창가', '물빛'],
 				emotions: ['CALM', 'COMFORT', 'FOCUS'],
 				starts: [75, 270, 510],
-				capacity: 100,
+				capacities: [8, 4, 10],
 			},
 		},
 		{
@@ -230,7 +230,7 @@ async function main() {
 				ambienceTags: ['음악', '낯선 자극', '몰입'],
 				emotions: ['AWE', 'EXCITEMENT', 'REFRESH'],
 				starts: [165, 390, 780],
-				capacity: 100,
+				capacities: [12, 6, 3],
 			},
 		},
 		{
@@ -255,7 +255,7 @@ async function main() {
 				ambienceTags: ['햇빛', '창가', '사람 온기'],
 				emotions: ['COMFORT', 'CALM', 'REFRESH'],
 				starts: [210, 450, 840],
-				capacity: 100,
+				capacities: [5, 2, 7],
 			},
 		},
 	]
@@ -304,7 +304,7 @@ async function main() {
 				startsAt,
 				endsAt: new Date(startsAt.getTime() + exp.durationMinutes * 60000),
 				bookingClosesAt: new Date(startsAt.getTime() - 300000),
-				capacity: exp.capacity,
+				capacity: exp.capacities[index],
 				status: 'OPEN',
 			}
 			await prisma.slot.upsert({
