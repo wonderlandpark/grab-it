@@ -26,7 +26,7 @@ export default function LoginPage() {
 			<main className='grid min-h-dvh place-items-center bg-gradient-to-b from-sky/60 to-paper px-5'>
 				<section className='w-full max-w-md rounded-[2rem] border border-white/80 bg-white/85 p-7 text-center shadow-xl shadow-brand/10 backdrop-blur'>
 					<div className='mb-8 flex justify-center'>
-						<Brand />
+						<Brand className='h-24' />
 					</div>
 					<p className='text-sm font-medium text-brand'>오늘은 어떤 마음을 만나고 싶나요?</p>
 					<h1 className='mt-2 text-3xl font-semibold tracking-tight'>감정으로 장소를 발견해요</h1>

@@ -46,7 +46,7 @@ export default function NewExperience() {
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-2xl px-5 py-10'>
-				<h1 className='text-4xl font-black'>순간 등록</h1>
+				<h1 className='text-4xl font-black'>경험 등록</h1>
 				<form onSubmit={submit} className='mt-7 space-y-5 rounded-3xl bg-white p-7'>
 					<SegmentedControl
 						label='공간'
@@ -56,7 +56,7 @@ export default function NewExperience() {
 						emptyMessage='먼저 공간을 등록해 주세요.'
 					/>
 					<label className='block font-bold'>
-						순간 이름
+						경험 이름
 						<input
 							required
 							value={form.title}

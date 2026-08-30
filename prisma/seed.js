@@ -2,6 +2,10 @@ const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 const afterMinutes = (minutes) => new Date(Date.now() + minutes * 60000)
+const reviewWindowStart = new Date(process.env.DEMO_REVIEW_START || '2026-08-31T14:00:00+09:00')
+const reviewOffsets = [
+	10, 25, 40, 55, 70, 85, 100, 115, 130, 145, 160, 175, 190, 205, 220, 235, 250,
+]
 
 async function main() {
 	await prisma.user.deleteMany({ where: { email: 'demo@emotion-map.local' } })
@@ -258,9 +262,209 @@ async function main() {
 				capacities: [5, 2, 7],
 			},
 		},
+		{
+			space: {
+				id: 'space-beauty',
+				name: '샤로수길 무드 네일',
+				description: '예약 사이에 비는 자리를 짧은 손끝 케어로 여는 작은 뷰티숍',
+				typeCode: 'BEAUTY',
+				address: '서울 관악구 봉천동',
+				roadAddress: '서울 관악구 봉천로 534 인근',
+				lat: 37.4786,
+				lng: 126.9557,
+				rules: '간단한 컬러와 케어 중 현장에서 선택할 수 있어요.',
+			},
+			experience: {
+				id: 'exp-nail-reset',
+				title: '손끝부터 바꾸는 40분 무드 케어',
+				description: '짧은 컬러 케어로 오늘의 분위기를 가볍게 전환해요.',
+				durationMinutes: 40,
+				priceWon: 22000,
+				originalPriceWon: 35000,
+				ambienceTags: ['기분 전환', '컬러', '1인 케어'],
+				emotions: ['REFRESH', 'EXCITEMENT', 'COMFORT'],
+				starts: [45, 210, 430, 780],
+				capacities: [1, 2, 1, 3],
+			},
+		},
+		{
+			space: {
+				id: 'space-focus-desk',
+				name: '관악 포커스 데스크',
+				description: '한산한 시간대의 창가 집중석을 짧게 여는 공유 작업 공간',
+				typeCode: 'COWORKING',
+				address: '서울 관악구 청룡동',
+				roadAddress: '서울 관악구 관악로 164 인근',
+				lat: 37.4815,
+				lng: 126.9491,
+				rules: '콘센트와 와이파이를 제공하며 통화는 라운지에서 가능해요.',
+			},
+			experience: {
+				id: 'exp-focus-desk',
+				title: '창가 집중석에서 몰입하는 90분',
+				description: '해야 할 일 하나만 정해 조용한 창가에서 끝내보세요.',
+				durationMinutes: 90,
+				priceWon: 4000,
+				originalPriceWon: 8000,
+				ambienceTags: ['콘센트', '자연광', '조용함'],
+				emotions: ['FOCUS', 'CALM'],
+				starts: [60, 260, 520, 850],
+				capacities: [7, 3, 9, 2],
+			},
+		},
+		{
+			space: {
+				id: 'space-counter-dining',
+				name: '낙성 작은 식탁',
+				description: '예약 전 비는 바 좌석에서 계절 한 접시를 내는 작은 다이닝',
+				typeCode: 'DINING',
+				address: '서울 관악구 낙성대동',
+				roadAddress: '서울 관악구 인헌길 23 인근',
+				lat: 37.4764,
+				lng: 126.9594,
+				rules: '알레르기가 있다면 입장 전에 운영자에게 알려주세요.',
+			},
+			experience: {
+				id: 'exp-seasonal-plate',
+				title: '혼자 앉는 오늘의 한 접시',
+				description: '바 좌석에서 계절 재료로 만든 한 접시를 천천히 즐겨요.',
+				durationMinutes: 60,
+				priceWon: 25000,
+				originalPriceWon: 40000,
+				ambienceTags: ['바 좌석', '계절 메뉴', '혼자 식사'],
+				emotions: ['COMFORT', 'EXCITEMENT', 'REFRESH'],
+				starts: [110, 330, 570, 900],
+				capacities: [2, 1, 4, 2],
+			},
+		},
+		{
+			space: {
+				id: 'space-pet-care',
+				name: '봉천 포근펫 케어룸',
+				description: '예약 사이 비는 케어 테이블을 산책 전 간단 관리에 활용해요.',
+				typeCode: 'PET_CARE',
+				address: '서울 관악구 봉천동',
+				roadAddress: '서울 관악구 은천로 92 인근',
+				lat: 37.486,
+				lng: 126.9427,
+				rules: '반려동물의 특이사항을 시작 전에 알려주세요.',
+			},
+			experience: {
+				id: 'exp-pet-refresh',
+				title: '산책 전 45분 포근 케어',
+				description: '발 세정과 빗질을 마치고 가벼운 산책 준비까지 도와드려요.',
+				durationMinutes: 45,
+				priceWon: 16000,
+				originalPriceWon: 26000,
+				ambienceTags: ['반려동물', '포근함', '산책 준비'],
+				emotions: ['COMFORT', 'ENERGY', 'REFRESH'],
+				starts: [80, 290, 490, 820],
+				capacities: [1, 1, 2, 1],
+			},
+		},
+		{
+			space: {
+				id: 'space-siheung-perfume',
+				name: '배곧 바람 향 작업실',
+				description: '수변의 향을 작은 병에 담아보는 시흥캠퍼스 인근 작업실',
+				typeCode: 'WORKSHOP',
+				address: '경기도 시흥시 배곧동',
+				roadAddress: '경기도 시흥시 배곧4로 32 인근',
+				lat: 37.3671,
+				lng: 126.7182,
+				rules: '향료 알레르기가 있다면 참여 전에 알려주세요.',
+			},
+			experience: {
+				id: 'exp-siheung-perfume',
+				title: '바다 향 미니 향수 블렌딩',
+				description: '세 가지 향을 골라 오늘의 기분을 작은 향수로 남겨요.',
+				durationMinutes: 55,
+				priceWon: 17000,
+				originalPriceWon: 29000,
+				ambienceTags: ['향기', '손으로 만들기', '바다'],
+				emotions: ['REFRESH', 'FOCUS', 'EXCITEMENT'],
+				starts: [50, 230, 470, 760],
+				capacities: [3, 1, 5, 2],
+			},
+		},
+		{
+			space: {
+				id: 'space-siheung-focus-booth',
+				name: '캠퍼스 사이 집중 부스',
+				description: '회의 사이 비는 방음 부스를 개인 몰입 공간으로 엽니다.',
+				typeCode: 'COWORKING',
+				address: '경기도 시흥시 배곧동',
+				roadAddress: '경기도 시흥시 서울대학로 173 인근',
+				lat: 37.365,
+				lng: 126.7193,
+				rules: '부스 내 음식 섭취는 어렵고 생수는 제공돼요.',
+			},
+			experience: {
+				id: 'exp-siheung-focus-booth',
+				title: '방해 없이 끝내는 집중 60분',
+				description: '조용한 부스에서 미뤄둔 일 하나를 끝내는 시간을 가져요.',
+				durationMinutes: 60,
+				priceWon: 3000,
+				originalPriceWon: 6000,
+				ambienceTags: ['방음', '몰입', '1인 공간'],
+				emotions: ['FOCUS', 'CALM'],
+				starts: [30, 195, 405, 690],
+				capacities: [5, 2, 8, 4],
+			},
+		},
+		{
+			space: {
+				id: 'space-siheung-gallery',
+				name: '수변 포켓 갤러리',
+				description: '전시 교체 전 비는 작은 공간을 짧은 감상 세션으로 엽니다.',
+				typeCode: 'CULTURE',
+				address: '경기도 시흥시 배곧동',
+				roadAddress: '경기도 시흥시 배곧2로 95 인근',
+				lat: 37.3698,
+				lng: 126.7221,
+				rules: '작품과의 안전거리를 지켜주세요. 사진 촬영은 가능해요.',
+			},
+			experience: {
+				id: 'exp-siheung-pocket-gallery',
+				title: '낯선 이미지에 머무는 35분',
+				description: '작은 전시와 큐레이션 카드로 익숙한 하루에 자극을 더해요.',
+				durationMinutes: 35,
+				priceWon: 0,
+				originalPriceWon: null,
+				ambienceTags: ['전시', '낯선 자극', '조용함'],
+				emotions: ['AWE', 'EXCITEMENT', 'CALM'],
+				starts: [70, 245, 455, 740],
+				capacities: [9, 4, 12, 6],
+			},
+		},
+		{
+			space: {
+				id: 'space-siheung-running',
+				name: '배곧 수변 러닝 베이스',
+				description: '러닝 클래스 전 비는 시간에 짧은 워밍업 세션을 엽니다.',
+				typeCode: 'SPORTS',
+				address: '경기도 시흥시 배곧동',
+				roadAddress: '경기도 시흥시 해송십리로 61 인근',
+				lat: 37.371,
+				lng: 126.728,
+				rules: '운동화와 편한 복장으로 참여해 주세요.',
+			},
+			experience: {
+				id: 'exp-siheung-running',
+				title: '수변을 깨우는 45분 러닝',
+				description: '가벼운 워밍업 뒤 수변을 천천히 달리며 몸과 기분을 깨워요.',
+				durationMinutes: 45,
+				priceWon: 6000,
+				originalPriceWon: 12000,
+				ambienceTags: ['야외', '움직임', '바람'],
+				emotions: ['ENERGY', 'LIBERATION', 'REFRESH'],
+				starts: [90, 275, 500, 800],
+				capacities: [6, 10, 3, 8],
+			},
+		},
 	]
 
-	for (const seed of seeds) {
+	for (const [seedIndex, seed] of seeds.entries()) {
 		await prisma.space.upsert({
 			where: { id: seed.space.id },
 			update: { ...seed.space, ownerId: publicOwner.id, status: 'PUBLISHED' },
@@ -311,6 +515,24 @@ async function main() {
 				where: { id: `${exp.id}-slot-${index + 1}` },
 				update: data,
 				create: { id: `${exp.id}-slot-${index + 1}`, ...data },
+			})
+		}
+
+		for (let index = 0; index < 3; index += 1) {
+			const offset = reviewOffsets[(seedIndex + index * 6) % reviewOffsets.length]
+			const startsAt = new Date(reviewWindowStart.getTime() + offset * 60000)
+			const data = {
+				experienceId: exp.id,
+				startsAt,
+				endsAt: new Date(startsAt.getTime() + exp.durationMinutes * 60000),
+				bookingClosesAt: startsAt,
+				capacity: [1, 2, 3, 4, 6, 8, 12][(seedIndex + index * 2) % 7],
+				status: 'OPEN',
+			}
+			await prisma.slot.upsert({
+				where: { id: `${exp.id}-review-slot-${index + 1}` },
+				update: data,
+				create: { id: `${exp.id}-review-slot-${index + 1}`, ...data },
 			})
 		}
 	}

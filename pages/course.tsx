@@ -301,12 +301,6 @@ function CourseDetail({
 					<Summary label='총 소요시간' value={duration(course.startsAt, course.endsAt)} />
 					<Summary label='총 이동시간' value={`${course.totalTravelMinutes}분`} />
 					<Summary label='총 대기시간' value={`${course.totalWaitMinutes}분`} />
-					<Summary
-						label='예상 총액'
-						value={
-							course.totalPriceWon === 0 ? '무료' : `${course.totalPriceWon.toLocaleString()}원`
-						}
-					/>
 					{course.totalDiscountWon > 0 && (
 						<Summary label='총 할인 금액' value={`${course.totalDiscountWon.toLocaleString()}원`} />
 					)}
@@ -322,6 +316,19 @@ function CourseDetail({
 							))}
 						</div>
 					)}
+					<div className='mt-6 border-t-2 border-white/25 pt-5'>
+						<div className='flex items-end justify-between gap-4'>
+							<div>
+								<p className='text-sm font-bold text-white/65'>예상 총액</p>
+								{course.totalDiscountWon > 0 && (
+									<p className='mt-1 text-xs text-white/40'>할인 금액 적용</p>
+								)}
+							</div>
+							<strong className='text-xl font-black tracking-tight md:text-2xl'>
+								{course.totalPriceWon === 0 ? '무료' : `${course.totalPriceWon.toLocaleString()}원`}
+							</strong>
+						</div>
+					</div>
 				</aside>
 			</div>
 		</>

@@ -41,18 +41,18 @@ export default function NewSlot() {
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-xl px-5 py-10'>
-				<h1 className='text-4xl font-black'>유휴 슬롯 열기</h1>
+				<h1 className='text-4xl font-black'>예약 시간 열기</h1>
 				<p className='mt-3 text-ink/55'>반복 일정 없이 실제로 비는 시간만 하나씩 엽니다.</p>
 				<form onSubmit={submit} className='mt-7 space-y-5 rounded-3xl bg-white p-7'>
 					<SegmentedControl
-						label='순간'
+						label='경험'
 						value={form.experienceId}
 						options={experiences.map((experience) => ({
 							value: experience.id,
 							label: experience.title,
 						}))}
 						onChange={(experienceId) => setForm({ ...form, experienceId })}
-						emptyMessage='먼저 순간을 등록해 주세요.'
+						emptyMessage='먼저 경험을 등록해 주세요.'
 					/>
 					<label className='block font-bold'>
 						시작 시각

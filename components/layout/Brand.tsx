@@ -1,12 +1,17 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
-export function Brand() {
+export function Brand({ className = 'h-11' }: { className?: string }) {
 	return (
-		<Link href='/' className='inline-flex items-center gap-2 font-semibold tracking-tight'>
-			{/* <span className='grid h-9 w-9 place-items-center rounded-2xl bg-brand text-lg text-white'>
-				grabit
-			</span> */}
-			<span>grabit</span>
+		<Link href='/' className='inline-flex items-center' aria-label='grabit 홈'>
+			<Image
+				src='/grabit-logo.png'
+				alt='grabit'
+				width={768}
+				height={639}
+				priority
+				className={`w-auto object-contain ${className}`}
+			/>
 		</Link>
 	)
 }

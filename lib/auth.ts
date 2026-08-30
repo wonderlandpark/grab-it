@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto'
 
 import { prisma } from '@/lib/prisma'
 import { guestIdentity } from '@/lib/demo'
+import { createGuestDemoFixtures } from '@/lib/demo-fixtures'
 
 const providers: NextAuthOptions['providers'] = []
 
@@ -26,19 +27,23 @@ if (process.env.DEMO_AUTH === 'true') {
 			async authorize() {
 				const uuid = randomUUID()
 				const identity = guestIdentity(uuid)
-				return prisma.user.create({
-					data: {
-						...identity,
-						partnerApplication: {
-							create: {
-								operatorName: '게스트 운영자',
-								phone: '체험용',
-								businessRegistrationNumber: `DEMO-${uuid.slice(0, 8)}`,
-								status: 'APPROVED',
-								reviewedAt: new Date(),
+				return prisma.$transaction(async (tx) => {
+					const user = await tx.user.create({
+						data: {
+							...identity,
+							partnerApplication: {
+								create: {
+									operatorName: '게스트 운영자',
+									phone: '체험용',
+									businessRegistrationNumber: `DEMO-${uuid.slice(0, 8)}`,
+									status: 'APPROVED',
+									reviewedAt: new Date(),
+								},
 							},
 						},
-					},
+					})
+					await createGuestDemoFixtures(tx, user.id, uuid)
+					return user
 				})
 			},
 		})

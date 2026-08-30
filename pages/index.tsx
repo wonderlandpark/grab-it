@@ -429,10 +429,11 @@ export default function Home() {
 			</Head>
 			<section className='light-hero px-5 py-14 md:py-24'>
 				<div className='mx-auto max-w-5xl'>
-					<p className='mb-3 font-bold text-brand'>
+					<p className='mb-1 text-lg font-black tracking-tight text-ink'>grabit</p>
+					{/* <p className='mb-3 font-bold text-brand'>
 						검색하다 지치기 전에, 지금의 나에게 맞는 오늘의 움직임
-					</p>
-					<h1 className='max-w-3xl text-4xl font-black leading-tight md:text-6xl'>
+					</p> */}
+					<h1 className='max-w-3xl text-4xl font-black leading-tight md:text-6xl '>
 						어떤 감정을
 						<br />
 						느끼고 싶나요?
@@ -447,15 +448,15 @@ export default function Home() {
 						<div className='search-panel-overflow'>
 							<div className='space-y-8 rounded-[2rem] border border-white/80 bg-white p-6 md:p-10'>
 								<fieldset>
-									<div className='mb-4 flex min-h-6 items-center justify-between gap-3'>
-										{!unsure && desiredEmotions.length > 0 ? (
-											<span className='text-sm font-black text-brand'>
-												{desiredEmotions.length}/2 선택
-											</span>
-										) : (
-											<span />
-										)}
-										{(desiredEmotions.length > 0 || unsure || currentState) && (
+									{(desiredEmotions.length > 0 || unsure || currentState) && (
+										<div className='mb-4 flex min-h-6 items-center justify-between gap-3'>
+											{!unsure && desiredEmotions.length > 0 ? (
+												<span className='text-sm font-black text-brand'>
+													{desiredEmotions.length}/2 선택
+												</span>
+											) : (
+												<span />
+											)}
 											<button
 												type='button'
 												onClick={() => {
@@ -468,8 +469,8 @@ export default function Home() {
 											>
 												선택 초기화
 											</button>
-										)}
-									</div>
+										</div>
+									)}
 									<div className='grid grid-cols-2 gap-3 md:grid-cols-3'>
 										{emotions.map((item) => (
 											<EmotionOptionButton
