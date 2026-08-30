@@ -4,10 +4,13 @@ module.exports = {
 	theme: {
 		extend: {
 			colors: {
-				ink: '#27332f',
-				paper: '#f7f4ed',
-				leaf: '#2f7764',
-				mist: '#dce8e2',
+				brand: '#006B9F',
+				action: '#00A3F1',
+				sky: '#C4F6FF',
+				paper: '#F3FAFF',
+				mist: '#E6F8FC',
+				glow: '#F8FF8E',
+				ink: '#1E2A44',
 				coral: '#ec8068',
 			},
 			fontFamily: {

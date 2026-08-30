@@ -68,20 +68,21 @@ describe('course composition', () => {
 		expect(result.courses[0].items).toHaveLength(1)
 	})
 
-	it('returns up to three distinct course candidates', () => {
+	it('returns up to four distinct course candidates', () => {
 		const candidates = [
 			candidate('a', [slot('a-1', 30, 60)]),
 			candidate('b', [slot('b-1', 90, 120)]),
 			candidate('c', [slot('c-1', 150, 180)]),
+			candidate('d', [slot('d-1', 210, 240)]),
 		]
 		const input = {
 			origin: { latitude: 37.4812, longitude: 126.9527 },
 			windowStart: start,
-			windowEnd: new Date(start.getTime() + 240 * 60000),
+			windowEnd: new Date(start.getTime() + 300 * 60000),
 		}
 		const result = buildCourses(candidates, input)
-		expect(result.courses).toHaveLength(3)
-		expect(new Set(result.courses.map((course) => course.signature)).size).toBe(3)
+		expect(result.courses).toHaveLength(4)
+		expect(new Set(result.courses.map((course) => course.signature)).size).toBe(4)
 	})
 
 	it('uses a conservative distance estimate', () => {

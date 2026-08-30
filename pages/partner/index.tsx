@@ -23,12 +23,9 @@ export default function Partner() {
 		return (
 			<AppShell>
 				<div className='mx-auto max-w-xl px-5 py-20 text-center'>
-					<h1 className='text-3xl font-black'>비는 시간을 경험으로 열어보세요</h1>
+					<h1 className='text-3xl font-black'>비는 시간을 새로운 순간으로 열어보세요</h1>
 					<p className='mt-3 text-ink/55'>고객 계정 그대로 파트너 신청을 할 수 있어요.</p>
-					<Link
-						href='/partner/apply'
-						className='mt-7 inline-block rounded-2xl bg-leaf px-7 py-4 font-black text-white'
-					>
+					<Link href='/partner/apply' className='btn-primary mt-7 rounded-2xl px-7 py-4 font-black'>
 						파트너 신청하기
 					</Link>
 				</div>
@@ -39,10 +36,10 @@ export default function Partner() {
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-6xl px-5 py-10'>
-				<p className='font-bold text-leaf'>
+				<p className='font-bold text-brand'>
 					예약 없이 사라질 공간·재료·인력을
 					<br />
-					오늘 판매 가능한 경험으로 전환해 보세요.
+					오늘 판매 가능한 순간으로 전환해 보세요.
 				</p>
 				<h1 className='mt-3 text-4xl font-black'>내 공간</h1>
 				<div className='mt-6 grid grid-cols-2 gap-3 md:grid-cols-4'>
@@ -59,14 +56,11 @@ export default function Partner() {
 					))}
 				</div>
 				<div className='mt-7 flex flex-wrap gap-3'>
-					<Link
-						href='/partner/spaces/new'
-						className='rounded-xl bg-leaf px-5 py-3 font-bold text-white'
-					>
+					<Link href='/partner/spaces/new' className='btn-primary rounded-xl px-5 py-3 font-bold'>
 						공간 등록
 					</Link>
 					<Link href='/partner/experiences/new' className='rounded-xl border px-5 py-3 font-bold'>
-						경험 상품 등록
+						순간 등록
 					</Link>
 					<Link href='/partner/slots/new' className='rounded-xl border px-5 py-3 font-bold'>
 						유휴 슬롯 열기
@@ -77,7 +71,7 @@ export default function Partner() {
 					<table className='w-full min-w-[700px] text-left text-sm'>
 						<thead>
 							<tr className='border-b'>
-								<th className='p-4'>경험</th>
+								<th className='p-4'>순간</th>
 								<th>시작</th>
 								<th>예약/잔여</th>
 								<th>체크인</th>

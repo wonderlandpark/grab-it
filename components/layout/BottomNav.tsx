@@ -20,7 +20,7 @@ export function BottomNav() {
 							key={item.href}
 							href={item.href}
 							className={`flex min-w-16 flex-col items-center gap-0.5 rounded-xl py-1 text-xs ${
-								active ? 'font-semibold text-leaf' : 'text-ink/55'
+								active ? 'font-semibold text-brand' : 'text-ink/55'
 							}`}
 						>
 							<span className='text-xl leading-none'>{item.icon}</span>

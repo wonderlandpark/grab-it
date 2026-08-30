@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	})
 	if (!booking) return res.status(404).json({ error: '예약을 찾을 수 없습니다.' })
 	if (booking.status !== 'CHECKED_IN')
-		return res.status(403).json({ error: '체크인한 경험만 기록할 수 있습니다.' })
+		return res.status(403).json({ error: '체크인한 순간만 기록할 수 있습니다.' })
 	if (booking.review) return res.status(409).json({ error: '이미 기록을 남겼습니다.' })
 	const afterEmotion = String(req.body?.afterEmotion || '') as Emotion
 	const highlightTags = Array.isArray(req.body?.highlightTags)

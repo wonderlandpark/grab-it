@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
+import { SegmentedControl } from '@/components/partner/SegmentedControl'
 import { spaceTypes, type PlaceSearchResult } from '@/types/domain'
 
 export default function NewSpace() {
@@ -57,7 +58,7 @@ export default function NewSpace() {
 							onChange={(e) => setQuery(e.target.value)}
 							className='min-w-0 flex-1 rounded-xl border p-3'
 						/>
-						<button onClick={search} className='rounded-xl bg-leaf px-5 text-white'>
+						<button onClick={search} className='btn-primary rounded-xl px-5'>
 							검색
 						</button>
 					</div>
@@ -82,20 +83,13 @@ export default function NewSpace() {
 							className='mt-2 w-full rounded-xl border p-3'
 						/>
 					</label>
-					<label className='block font-bold'>
-						유형
-						<select
-							value={form.typeCode}
-							onChange={(e) => setForm({ ...form, typeCode: e.target.value })}
-							className='mt-2 w-full rounded-xl border p-3'
-						>
-							{spaceTypes.map(([value, label]) => (
-								<option key={value} value={value}>
-									{label}
-								</option>
-							))}
-						</select>
-					</label>
+					<SegmentedControl
+						label='유형'
+						value={form.typeCode}
+						options={spaceTypes.map(([value, label]) => ({ value, label }))}
+						onChange={(typeCode) => setForm({ ...form, typeCode })}
+						columns={3}
+					/>
 					<label className='block font-bold'>
 						소개
 						<textarea
@@ -138,9 +132,7 @@ export default function NewSpace() {
 							className='mt-2 w-full rounded-xl border p-3'
 						/>
 					</label>
-					<button className='w-full rounded-xl bg-leaf p-4 font-black text-white'>
-						공간 저장하기
-					</button>
+					<button className='btn-primary w-full rounded-xl p-4 font-black'>공간 저장하기</button>
 					{error && <p className='text-coral'>{error}</p>}
 				</form>
 			</div>

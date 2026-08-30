@@ -1,6 +1,6 @@
 import type { Emotion } from '@prisma/client'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { distanceFrom, recommendationScore } from '@/lib/discovery'
+import { distanceFrom, matchedEmotionCount, recommendationScore } from '@/lib/discovery'
 import { isValidCoordinates } from '@/lib/geo'
 import { prisma } from '@/lib/prisma'
 
@@ -18,7 +18,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 	const latitude = Number(req.query.latitude),
 		longitude = Number(req.query.longitude)
-	const desiredEmotion = String(req.query.desiredEmotion || '') as Emotion
+	const desiredEmotions = [
+		...new Set(
+			String(req.query.desiredEmotions || req.query.desiredEmotion || '')
+				.split(',')
+				.filter((emotion): emotion is Emotion => emotions.has(emotion))
+		),
+	]
 	const legacyWindow = Number(req.query.startWithinMinutes)
 	const availableFromMinutes = Number(req.query.availableFromMinutes ?? 0)
 	const availableUntilMinutes = Number(
@@ -33,7 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			: Number(req.query.maxBudget)
 	if (
 		!isValidCoordinates(latitude, longitude) ||
-		!emotions.has(desiredEmotion) ||
+		!desiredEmotions.length ||
+		desiredEmotions.length > 2 ||
 		!Number.isInteger(availableFromMinutes) ||
 		!Number.isInteger(availableUntilMinutes) ||
 		availableFromMinutes < 0 ||
@@ -104,9 +111,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				(candidate) => candidate.capacity > candidate.bookings.length
 			)
 			if (!slot) return []
+			const experienceEmotions = experience.emotions.map((item) => item.emotion)
+			const emotionMatches = matchedEmotionCount(desiredEmotions, experienceEmotions)
 			const score = recommendationScore({
-				desiredEmotion,
-				emotions: experience.emotions.map((item) => item.emotion),
+				desiredEmotions,
+				emotions: experienceEmotions,
 				distanceMeters,
 				maxDistanceMeters: maxDistanceKm * 1000,
 				startsAt: slot.startsAt,
@@ -121,7 +130,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 					durationMinutes: experience.durationMinutes,
 					priceWon: experience.priceWon,
 					originalPriceWon: experience.originalPriceWon,
-					emotions: experience.emotions.map((item) => item.emotion),
+					emotions: experienceEmotions,
+					matchedEmotionCount: emotionMatches,
 					ambienceTags: experience.ambienceTags,
 					mediaUrl: experience.media[0]
 						? `/api/media/${encodeURIComponent(experience.media[0].key)}`
@@ -149,6 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		})
 		.sort(
 			(a, b) =>
+				b.matchedEmotionCount - a.matchedEmotionCount ||
 				b.score - a.score ||
 				new Date(a.nextSlot.startsAt).getTime() - new Date(b.nextSlot.startsAt).getTime()
 		)

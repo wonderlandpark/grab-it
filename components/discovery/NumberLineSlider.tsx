@@ -26,7 +26,7 @@ export function NumberLineSlider({
 			<legend className='sr-only'>{label}</legend>
 			<div className='flex items-center justify-between gap-3'>
 				<span className='font-black'>{label}</span>
-				<output className='rounded-full bg-leaf px-3 py-1 text-sm font-bold text-white'>
+				<output className='rounded-full bg-action px-3 py-1 text-sm font-bold text-white'>
 					{options[index].label}
 				</output>
 			</div>
@@ -47,7 +47,7 @@ export function NumberLineSlider({
 						key={option.value}
 						type='button'
 						onClick={() => onChange(option.value)}
-						className={`max-w-16 text-center text-[11px] leading-tight ${option.value === value ? 'font-black text-leaf' : 'text-ink/45'}`}
+						className={`rounded-md px-1 text-center text-[11px] leading-tight transition-colors hover:bg-sky/40 hover:text-brand ${option.value === value ? 'font-black text-brand' : 'text-ink/45'}`}
 					>
 						{option.label}
 					</button>
@@ -109,10 +109,10 @@ export function ActivityTimeRange({
 
 	return (
 		<fieldset className='rounded-2xl border border-black/10 bg-paper/45 p-5 md:p-6'>
-			<legend className='sr-only'>오늘 활동 가능한 시간대</legend>
+			<legend className='sr-only'>오늘 순간을 보낼 수 있는 시간대</legend>
 			<div className='flex flex-wrap items-center justify-between gap-3'>
 				<span className='font-black'>오늘 언제 시간이 있나요?</span>
-				<output className='rounded-full bg-leaf px-3 py-1 text-sm font-bold text-white'>
+				<output className='rounded-full bg-action px-3 py-1 text-sm font-bold text-white'>
 					{displayTime(fromMinutes)} ~ {displayTime(untilMinutes)} ·{' '}
 					{durationLabel(untilMinutes - fromMinutes)}
 				</output>
@@ -121,7 +121,7 @@ export function ActivityTimeRange({
 				<div className='time-range-track' />
 				<input
 					type='range'
-					aria-label='활동 시작 시각'
+					aria-label='가능 시간 시작'
 					min='0'
 					max='1410'
 					step='30'
@@ -133,7 +133,7 @@ export function ActivityTimeRange({
 				/>
 				<input
 					type='range'
-					aria-label='활동 종료 시각'
+					aria-label='가능 시간 종료'
 					min='30'
 					max='1440'
 					step='30'
@@ -175,7 +175,7 @@ export function BudgetNumberLine({
 				<span className='font-black'>
 					최대 예산 <span className='font-normal text-ink/40'>선택</span>
 				</span>
-				<output className='rounded-full bg-leaf px-3 py-1 text-sm font-bold text-white'>
+				<output className='rounded-full bg-action px-3 py-1 text-sm font-bold text-white'>
 					{display}
 				</output>
 			</div>

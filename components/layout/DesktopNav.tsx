@@ -19,7 +19,7 @@ export function DesktopNav() {
 							href='/'
 							className={`rounded-full px-3 py-1.5 font-bold transition ${discoveryMode ? 'bg-white shadow-sm' : 'text-ink/55'}`}
 						>
-							경험 찾기
+							순간 찾기
 						</Link>
 						<Link
 							href='/partner'
@@ -39,7 +39,7 @@ export function DesktopNav() {
 				) : (
 					<Link
 						href='/login'
-						className='rounded-full bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-leaf/95'
+						className='btn-primary rounded-full px-3 py-2 text-xs font-semibold'
 					>
 						로그인
 					</Link>

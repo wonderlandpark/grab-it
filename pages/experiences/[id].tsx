@@ -111,7 +111,7 @@ export default function ExperiencePage() {
 	if (!experience)
 		return (
 			<AppShell>
-				<div className='grid min-h-[70vh] place-items-center'>{error || '경험을 불러오는 중…'}</div>
+				<div className='grid min-h-[70vh] place-items-center'>{error || '순간을 불러오는 중…'}</div>
 			</AppShell>
 		)
 	return (
@@ -123,10 +123,10 @@ export default function ExperiencePage() {
 				<section>
 					{safeReturnTo && (
 						<Link href={safeReturnTo} className='mb-5 inline-block font-bold text-ink/60'>
-							{courseReturnTo ? '← 코스로 돌아가기' : '← 검색 결과로'}
+							{courseReturnTo ? '← 궤적으로 돌아가기' : '← 검색 결과로'}
 						</Link>
 					)}
-					<div className='relative grid aspect-[16/9] place-items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-mist to-[#f6e8ca]'>
+					<div className='relative grid aspect-[16/9] place-items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-mist to-glow/40'>
 						{experience.mediaUrl ? (
 							<Image
 								src={experience.mediaUrl}
@@ -139,15 +139,15 @@ export default function ExperiencePage() {
 							<span className='text-7xl'>✨</span>
 						)}
 					</div>
-					<p className='mt-8 font-bold text-leaf'>{experience.space.name}</p>
+					<p className='mt-8 font-bold text-brand'>{experience.space.name}</p>
 					<div className='mt-2 flex items-start justify-between gap-4'>
 						<h1 className='text-4xl font-black'>{experience.title}</h1>
 						<button
 							type='button'
 							onClick={() => wishlist.toggle(experience.id)}
-							className={`shrink-0 rounded-full px-4 py-2 font-black ${wishlist.wishIds.includes(experience.id) ? 'bg-coral text-white' : 'border bg-white'}`}
+							className={`shrink-0 rounded-full px-4 py-2 font-black transition-colors ${wishlist.wishIds.includes(experience.id) ? 'bg-glow text-ink hover:bg-glow/80' : 'btn-secondary'}`}
 						>
-							{wishlist.wishIds.includes(experience.id) ? '♥ 찜' : '♡ 찜'}
+							{wishlist.wishIds.includes(experience.id) ? '★ 잡음' : '☆ 잡기'}
 						</button>
 					</div>
 					<p className='mt-4 leading-7 text-ink/65'>{experience.description}</p>
@@ -178,24 +178,28 @@ export default function ExperiencePage() {
 				</section>
 				<aside>
 					<div className='sticky top-24 rounded-[2rem] bg-white p-6 shadow-lg'>
-						<p className='text-sm font-bold text-coral'>현장결제 예정</p>
+						<p className='text-sm font-bold text-ink/50'>현장결제 예정</p>
 						<div className='mt-1'>
 							<ExperiencePrice
 								priceWon={experience.priceWon}
 								originalPriceWon={experience.originalPriceWon}
 							/>
 						</div>
-						<p className='mt-1 text-sm'>{experience.durationMinutes}분 경험</p>
+						<p className='mt-1 text-sm'>{experience.durationMinutes}분</p>
 						<h2 className='mt-7 font-black'>시작 시간 선택</h2>
 						<div className='mt-3 space-y-2'>
 							{experience.slots.map((slot) => (
 								<button
 									key={slot.id}
 									onClick={() => setSlot(slot.id)}
-									className={`w-full rounded-2xl border p-4 text-left ${selectedSlot === slot.id ? 'border-leaf bg-mist' : ''}`}
+									className={`btn-chip w-full rounded-2xl p-4 text-left ${selectedSlot === slot.id ? 'btn-chip-selected' : ''}`}
 								>
 									<strong>{dateTime(slot.startsAt)}</strong>
-									<span className='float-right text-sm text-coral'>{slot.availableSeats}석</span>
+									<span
+										className={`float-right text-sm ${selectedSlot === slot.id ? 'text-white' : 'text-brand'}`}
+									>
+										{slot.availableSeats}석
+									</span>
 								</button>
 							))}
 						</div>
@@ -205,9 +209,9 @@ export default function ExperiencePage() {
 						<button
 							onClick={reserve}
 							disabled={!selectedSlot || booking}
-							className='mt-6 w-full rounded-2xl bg-leaf p-4 font-black text-white disabled:opacity-40'
+							className='btn-primary mt-6 w-full rounded-2xl p-4 font-black'
 						>
-							{booking ? '좌석 확인 중…' : '이 경험 예약하기'}
+							{booking ? '좌석 확인 중…' : '예약하기'}
 						</button>
 						{error && <p className='mt-3 text-sm font-bold text-coral'>{error}</p>}
 					</div>
@@ -221,7 +225,7 @@ export default function ExperiencePage() {
 				>
 					<div className='w-full max-w-md rounded-[2rem] bg-white p-7 shadow-2xl'>
 						<h2 className='text-2xl font-black'>예약을 저장하려면 계속해 주세요.</h2>
-						<p className='mt-2 text-sm text-ink/55'>찜한 경험과 시간은 그대로 유지됩니다.</p>
+						<p className='mt-2 text-sm text-ink/55'>잡은 순간과 시간은 그대로 유지됩니다.</p>
 						<Link
 							href={{
 								pathname: '/login',
@@ -229,7 +233,7 @@ export default function ExperiencePage() {
 									callbackUrl: `${router.asPath}${router.asPath.includes('?') ? '&' : '?'}resumeBooking=1`,
 								},
 							}}
-							className='mt-7 block w-full rounded-2xl bg-leaf p-4 text-center font-black text-white'
+							className='btn-primary mt-7 w-full rounded-2xl p-4 font-black'
 						>
 							로그인 페이지로 계속하기
 						</Link>

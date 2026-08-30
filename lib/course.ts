@@ -54,7 +54,7 @@ export function buildCourses(
 	input: CourseSearchInput
 ): { courses: CourseRecommendation[] } {
 	const beamWidth = input.beamWidth || 200
-	const maxCourses = input.maxCourses || 3
+	const maxCourses = input.maxCourses || 4
 	const completed = new Map<string, SearchState>()
 	let states: SearchState[] = [
 		{
@@ -164,7 +164,7 @@ function omissionReason(candidate: CourseCandidate, state: SearchState) {
 		)
 	)
 	return overlaps
-		? '코스에 포함된 다른 경험과 시간이 겹쳐요.'
+		? '궤적에 포함된 다른 순간과 시간이 겹쳐요.'
 		: '이동과 준비 시간을 포함하면 연결하기 어려워요.'
 }
 

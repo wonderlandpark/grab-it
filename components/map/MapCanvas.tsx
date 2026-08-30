@@ -10,12 +10,12 @@ function markerContent(item: ExperienceRecommendation) {
 
 	return `
 		<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);cursor:pointer;">
-			<div style="white-space:nowrap;border:2px solid #fff;border-radius:18px;padding:8px 12px;background:#27332f;color:#fff;font:700 12px Pretendard,system-ui,sans-serif;box-shadow:0 5px 14px #0004;">
+			<div style="white-space:nowrap;border:2px solid #fff;border-radius:18px;padding:8px 12px;background:#1E2A44;color:#fff;font:700 12px Pretendard,system-ui,sans-serif;box-shadow:0 5px 14px #0004;">
 				${emotion} · ${item.durationMinutes}분 · ${item.nextSlot.availableSeats}석
 			</div>
-			<div style="width:2px;height:4px;background:#27332f;"></div>
+			<div style="width:2px;height:4px;background:#1E2A44;"></div>
 			<svg width="20" height="26" viewBox="0 0 30 38" aria-hidden="true" style="filter:drop-shadow(0 3px 3px #0004);overflow:visible;">
-				<path d="M15 1.5C7.55 1.5 1.5 7.55 1.5 15c0 10.2 13.5 21.5 13.5 21.5S28.5 25.2 28.5 15C28.5 7.55 22.45 1.5 15 1.5Z" fill="#ec8068" stroke="#fff" stroke-width="3" />
+				<path d="M15 1.5C7.55 1.5 1.5 7.55 1.5 15c0 10.2 13.5 21.5 13.5 21.5S28.5 25.2 28.5 15C28.5 7.55 22.45 1.5 15 1.5Z" fill="#F8FF8E" stroke="#1E2A44" stroke-width="3" />
 				<circle cx="15" cy="15" r="5" fill="#fff" />
 			</svg>
 		</div>`
@@ -135,7 +135,7 @@ export default function MapCanvas({
 			icon: {
 				content: `
 					<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);pointer-events:none;">
-						<span style="display:block;width:18px;height:18px;border:4px solid #fff;border-radius:50%;background:#246bfd;box-shadow:0 2px 8px #0005;"></span>
+						<span style="display:block;width:18px;height:18px;border:4px solid #fff;border-radius:50%;background:#00A3F1;box-shadow:0 2px 8px #0005;"></span>
 					</div>`,
 				anchor: new maps.Point(0, 0),
 			},
@@ -146,7 +146,7 @@ export default function MapCanvas({
 
 	if (mock)
 		return (
-			<div className='relative min-h-[460px] overflow-hidden rounded-3xl bg-[#e6ece8] p-6'>
+			<div className='relative min-h-[460px] overflow-hidden rounded-3xl bg-mist p-6'>
 				<div
 					className='absolute inset-0 opacity-40'
 					style={{
@@ -175,8 +175,8 @@ export default function MapCanvas({
 						>
 							<path
 								d='M15 1.5C7.55 1.5 1.5 7.55 1.5 15c0 10.2 13.5 21.5 13.5 21.5S28.5 25.2 28.5 15C28.5 7.55 22.45 1.5 15 1.5Z'
-								fill='#ec8068'
-								stroke='#fff'
+								fill='#F8FF8E'
+								stroke='#1E2A44'
 								strokeWidth='3'
 							/>
 							<circle cx='15' cy='15' r='5' fill='#fff' />
@@ -203,7 +203,7 @@ export default function MapCanvas({
 		)
 	return (
 		<div className='relative overflow-hidden rounded-3xl'>
-			<div ref={root} className='min-h-[460px]' aria-label='추천 경험 지도' />
+			<div ref={root} className='min-h-[460px]' aria-label='추천 순간 지도' />
 			<LocationControl locating={locating} error={locationError} onClick={locateCurrentPosition} />
 		</div>
 	)

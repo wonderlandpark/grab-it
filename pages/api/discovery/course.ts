@@ -26,7 +26,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				),
 			]
 		: []
-	const desiredEmotion = String(body.desiredEmotion || '') as Emotion
+	const desiredEmotions = [
+		...new Set<Emotion>(
+			(Array.isArray(body.desiredEmotions) ? body.desiredEmotions : [body.desiredEmotion]).filter(
+				(emotion: unknown): emotion is Emotion =>
+					typeof emotion === 'string' ? emotions.has(emotion) : false
+			)
+		),
+	]
 	const latitude = Number(body.latitude)
 	const longitude = Number(body.longitude)
 	const maxDistanceKm = Number(body.maxDistanceKm || 3)
@@ -34,7 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const availableUntilMinutes = Number(body.availableUntilMinutes || 180)
 	if (
 		!experienceIds.length ||
-		!emotions.has(desiredEmotion) ||
+		!desiredEmotions.length ||
+		desiredEmotions.length > 2 ||
 		!isValidCoordinates(latitude, longitude) ||
 		maxDistanceKm <= 0 ||
 		!Number.isInteger(availableFromMinutes) ||
@@ -43,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		availableUntilMinutes > 1440 ||
 		availableUntilMinutes - availableFromMinutes < 30
 	)
-		return res.status(400).json({ error: '코스 조건을 다시 확인해 주세요.' })
+		return res.status(400).json({ error: '궤적 조건을 다시 확인해 주세요.' })
 
 	const now = new Date()
 	const earliest = new Date(now.getTime() + availableFromMinutes * 60000)
@@ -101,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const firstSlot = slots[0]
 		const score = firstSlot
 			? recommendationScore({
-					desiredEmotion,
+					desiredEmotions,
 					emotions: experience.emotions.map((item) => item.emotion),
 					distanceMeters,
 					maxDistanceMeters: maxDistanceKm * 1000,
@@ -145,7 +153,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		origin: { latitude, longitude },
 		windowStart: earliest,
 		windowEnd: latest,
-		maxCourses: 3,
+		maxCourses: 4,
 		beamWidth: 200,
 	})
 	if (result.courses.length) {

@@ -35,7 +35,7 @@ export default function CheckInPage() {
 						<button
 							onClick={confirm}
 							disabled={loading}
-							className='mt-7 w-full rounded-2xl bg-leaf p-4 font-black text-white'
+							className='btn-primary mt-7 w-full rounded-2xl p-4 font-black'
 						>
 							{loading ? '확인 중…' : '체크인 확정'}
 						</button>

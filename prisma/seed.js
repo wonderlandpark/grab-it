@@ -77,7 +77,7 @@ async function main() {
 				durationMinutes: 45,
 				priceWon: 6500,
 				originalPriceWon: 10000,
-				ambienceTags: ['조용함', '창가', '사람 온기'],
+				ambienceTags: ['조용함', '창가', '이색적'],
 				emotions: ['CALM', 'COMFORT', 'FOCUS'],
 				starts: [25, 120, 480],
 				capacities: [6, 3, 8],

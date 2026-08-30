@@ -2,7 +2,7 @@ import type { CourseRecommendation, DiscoveryIntent } from '@/types/domain'
 
 export const WISH_KEY = 'course-wishes:v1'
 export const DISCOVERY_VIEW_KEY = 'discovery-view:v1'
-export const COURSE_DRAFT_KEY = 'course-draft:v3'
+export const COURSE_DRAFT_KEY = 'course-draft:v4'
 export const WISH_EVENT = 'course-wishes-change'
 
 export interface DiscoveryViewState {

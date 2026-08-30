@@ -3,10 +3,10 @@ export const emotions = [
 	{ value: 'REFRESH', label: '기분 전환', emoji: '🍊' },
 	{ value: 'EXCITEMENT', label: '설렘', emoji: '💗' },
 	{ value: 'AWE', label: '문화적 자극', emoji: '🌌' },
-	{ value: 'COMFORT', label: '사람 온기', emoji: '🫂' },
+	{ value: 'COMFORT', label: '이색적', emoji: '🫂' },
 	{ value: 'LIBERATION', label: '해방감', emoji: '🌊' },
 	{ value: 'FOCUS', label: '몰입', emoji: '✍️' },
-	{ value: 'ENERGY', label: '활력', emoji: '⚡' },
+	{ value: 'ENERGY', label: '왁자지껄함', emoji: '⚡' },
 ] as const
 
 export type EmotionValue = (typeof emotions)[number]['value']
@@ -63,6 +63,7 @@ export interface ExperienceRecommendation {
 	ambienceTags: string[]
 	mediaUrl: string | null
 	score: number
+	matchedEmotionCount?: number
 	space: {
 		id: string
 		name: string
@@ -111,6 +112,7 @@ export interface BookingTicket {
 export interface DiscoveryIntent {
 	currentState?: string
 	desiredEmotion: EmotionValue
+	desiredEmotions?: EmotionValue[]
 	availableFromMinutes: number
 	availableUntilMinutes: number
 	latitude: number

@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { AppShell } from '@/components/layout/AppShell'
+import { SegmentedControl } from '@/components/partner/SegmentedControl'
 import { emotions } from '@/types/domain'
 
 export default function NewExperience() {
@@ -45,25 +46,17 @@ export default function NewExperience() {
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-2xl px-5 py-10'>
-				<h1 className='text-4xl font-black'>경험 상품 등록</h1>
+				<h1 className='text-4xl font-black'>순간 등록</h1>
 				<form onSubmit={submit} className='mt-7 space-y-5 rounded-3xl bg-white p-7'>
+					<SegmentedControl
+						label='공간'
+						value={form.spaceId}
+						options={spaces.map((space) => ({ value: space.id, label: space.name }))}
+						onChange={(spaceId) => setForm({ ...form, spaceId })}
+						emptyMessage='먼저 공간을 등록해 주세요.'
+					/>
 					<label className='block font-bold'>
-						공간
-						<select
-							required
-							value={form.spaceId}
-							onChange={(e) => setForm({ ...form, spaceId: e.target.value })}
-							className='mt-2 w-full rounded-xl border p-3'
-						>
-							{spaces.map((s) => (
-								<option key={s.id} value={s.id}>
-									{s.name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className='block font-bold'>
-						경험 이름
+						순간 이름
 						<input
 							required
 							value={form.title}
@@ -128,7 +121,7 @@ export default function NewExperience() {
 												: [...form.emotions, em.value],
 										})
 									}
-									className={`rounded-full border px-3 py-2 ${form.emotions.includes(em.value) ? 'bg-leaf text-white' : ''}`}
+									className={`btn-chip rounded-full px-3 py-2 ${form.emotions.includes(em.value) ? 'btn-chip-selected' : ''}`}
 								>
 									{em.emoji} {em.label}
 								</button>
@@ -144,9 +137,7 @@ export default function NewExperience() {
 							className='mt-2 w-full rounded-xl border p-3'
 						/>
 					</label>
-					<button className='w-full rounded-xl bg-leaf p-4 font-black text-white'>
-						상품 공개하기
-					</button>
+					<button className='btn-primary w-full rounded-xl p-4 font-black'>상품 공개하기</button>
 					{error && <p className='text-coral'>{error}</p>}
 				</form>
 			</div>

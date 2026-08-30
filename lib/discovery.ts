@@ -2,7 +2,7 @@ import type { Emotion } from '@prisma/client'
 import { distanceInMeters } from '@/lib/geo'
 
 export interface ScoringInput {
-	desiredEmotion: Emotion
+	desiredEmotions: Emotion[]
 	emotions: Emotion[]
 	distanceMeters: number
 	maxDistanceMeters: number
@@ -12,7 +12,12 @@ export interface ScoringInput {
 }
 
 export function recommendationScore(input: ScoringInput) {
-	const emotion = input.emotions.includes(input.desiredEmotion) ? 50 : 0
+	const matchedEmotionCount = input.desiredEmotions.filter((emotion) =>
+		input.emotions.includes(emotion)
+	).length
+	const emotion = input.desiredEmotions.length
+		? 50 * (matchedEmotionCount / input.desiredEmotions.length)
+		: 0
 	const distance = Math.max(
 		0,
 		25 * (1 - input.distanceMeters / Math.max(input.maxDistanceMeters, 1))
@@ -21,6 +26,10 @@ export function recommendationScore(input: ScoringInput) {
 	const position = Math.max(0, input.startsAt.getTime() - input.earliest.getTime())
 	const time = Math.max(0, 25 * (1 - position / windowMilliseconds))
 	return Math.round((emotion + distance + time) * 10) / 10
+}
+
+export function matchedEmotionCount(desiredEmotions: Emotion[], experienceEmotions: Emotion[]) {
+	return desiredEmotions.filter((emotion) => experienceEmotions.includes(emotion)).length
 }
 
 export function distanceFrom(

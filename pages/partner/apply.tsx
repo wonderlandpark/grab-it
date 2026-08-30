@@ -26,7 +26,7 @@ export default function Apply() {
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-xl px-5 py-12'>
-				<p className='font-bold text-leaf'>누구나 공간 운영자가 될 수 있어요</p>
+				<p className='font-bold text-brand'>누구나 공간 운영자가 될 수 있어요</p>
 				<h1 className='mt-2 text-4xl font-black'>공간 파트너 신청</h1>
 				{status && (
 					<div className='mt-6 rounded-2xl bg-mist p-5 font-bold'>
@@ -51,7 +51,7 @@ export default function Apply() {
 								/>
 							</label>
 						))}
-						<button className='w-full rounded-xl bg-leaf p-4 font-black text-white'>
+						<button className='btn-primary w-full rounded-xl p-4 font-black'>
 							신청하기
 						</button>
 					</form>
@@ -59,7 +59,7 @@ export default function Apply() {
 				{status === 'APPROVED' && (
 					<button
 						onClick={() => router.push('/partner')}
-						className='mt-6 rounded-xl bg-leaf px-6 py-4 font-black text-white'
+						className='btn-primary mt-6 rounded-xl px-6 py-4 font-black'
 					>
 						대시보드로 이동
 					</button>

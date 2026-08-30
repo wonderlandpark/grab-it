@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+	.light-hero {
+		background:
+			radial-gradient(circle at 85% 8%, theme('colors.glow') 0, transparent 30%),
+			linear-gradient(
+				to bottom,
+				theme('colors.sky') 0%,
+				theme('colors.mist') 52%,
+				theme('colors.paper') 100%
+			);
+	}
+
+	.btn-primary {
+		@apply inline-flex items-center justify-center bg-action text-white transition-colors duration-200 hover:bg-action/85 active:bg-action/75 disabled:pointer-events-none disabled:opacity-50;
+	}
+
+	.btn-secondary {
+		@apply inline-flex items-center justify-center border border-action/30 bg-white text-ink transition-colors duration-200 hover:border-action/60 hover:bg-sky/35 hover:text-brand active:bg-sky/55;
+	}
+
+	.btn-chip {
+		@apply border border-action/25 bg-white text-ink transition-colors duration-200 hover:border-action/55 hover:bg-sky/35;
+	}
+
+	.btn-chip-selected {
+		@apply border-action bg-action text-white hover:border-action hover:bg-action/85;
+	}
+
+	.btn-ghost {
+		@apply text-ink/60 transition-colors duration-200 hover:bg-sky/35 hover:text-brand active:bg-sky/55;
+	}
+}
+
 @font-face {
 	font-family: 'Pretendard Variable';
 	src: url('/fonts/PretendardVariable.woff2') format('woff2');
@@ -27,8 +60,8 @@ body,
 }
 
 body {
-	background: #f7f4ed;
-	color: #27332f;
+	background: theme('colors.paper');
+	color: theme('colors.ink');
 	font-family:
 		'Pretendard Variable',
 		Pretendard,
@@ -64,7 +97,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-	outline: 3px solid rgb(47 119 100 / 35%);
+	outline: 3px solid color-mix(in srgb, theme('colors.action') 40%, transparent);
 	outline-offset: 2px;
 }
 
@@ -79,6 +112,68 @@ select:focus-visible {
 
 .scrollbar-none::-webkit-scrollbar {
 	display: none;
+}
+
+.search-panel-collapse {
+	display: grid;
+	grid-template-rows: 1fr;
+	margin-top: 2.5rem;
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+	transition:
+		grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		margin-top 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 220ms ease,
+		transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		visibility 0s;
+}
+
+.search-panel-collapse.is-collapsed {
+	grid-template-rows: 0fr;
+	margin-top: 0;
+	opacity: 0;
+	pointer-events: none;
+	visibility: hidden;
+	transform: translateY(-10px);
+	transition:
+		grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		margin-top 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 180ms ease,
+		transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+		visibility 0s 360ms;
+}
+
+.search-panel-overflow {
+	min-height: 0;
+	overflow: hidden;
+}
+
+.search-summary-enter {
+	animation: search-summary-enter 280ms ease-out both;
+}
+
+@keyframes search-summary-enter {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.search-panel-collapse,
+	.search-panel-collapse.is-collapsed {
+		transition: none;
+	}
+
+	.search-summary-enter {
+		animation: none;
+	}
 }
 
 .number-line-range {
@@ -96,21 +191,21 @@ select:focus-visible {
 	border-radius: 999px;
 	background: linear-gradient(
 		to right,
-		#2f7764 0 var(--range-progress),
-		#d5ddd9 var(--range-progress) 100%
+		theme('colors.action') 0 var(--range-progress),
+		theme('colors.mist') var(--range-progress) 100%
 	);
 }
 
 .number-line-range::-moz-range-track {
 	height: 6px;
 	border-radius: 999px;
-	background: #d5ddd9;
+	background: theme('colors.mist');
 }
 
 .number-line-range::-moz-range-progress {
 	height: 6px;
 	border-radius: 999px;
-	background: #2f7764;
+	background: theme('colors.action');
 }
 
 .number-line-range::-webkit-slider-thumb {
@@ -121,8 +216,8 @@ select:focus-visible {
 	-webkit-appearance: none;
 	border: 4px solid white;
 	border-radius: 50%;
-	background: #2f7764;
-	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	background: theme('colors.action');
+	box-shadow: 0 2px 8px color-mix(in srgb, theme('colors.action') 28%, transparent);
 }
 
 .number-line-range::-moz-range-thumb {
@@ -130,8 +225,8 @@ select:focus-visible {
 	height: 18px;
 	border: 4px solid white;
 	border-radius: 50%;
-	background: #2f7764;
-	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	background: theme('colors.action');
+	box-shadow: 0 2px 8px color-mix(in srgb, theme('colors.action') 28%, transparent);
 }
 
 .time-range {
@@ -148,9 +243,9 @@ select:focus-visible {
 	border-radius: 999px;
 	background: linear-gradient(
 		to right,
-		#d5ddd9 0 var(--time-range-start),
-		#2f7764 var(--time-range-start) var(--time-range-end),
-		#d5ddd9 var(--time-range-end) 100%
+		theme('colors.mist') 0 var(--time-range-start),
+		theme('colors.action') var(--time-range-start) var(--time-range-end),
+		theme('colors.mist') var(--time-range-end) 100%
 	);
 }
 
@@ -186,8 +281,8 @@ select:focus-visible {
 	-webkit-appearance: none;
 	border: 4px solid white;
 	border-radius: 50%;
-	background: #2f7764;
-	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	background: theme('colors.action');
+	box-shadow: 0 2px 8px color-mix(in srgb, theme('colors.action') 28%, transparent);
 	cursor: grab;
 }
 
@@ -197,7 +292,7 @@ select:focus-visible {
 	pointer-events: auto;
 	border: 4px solid white;
 	border-radius: 50%;
-	background: #2f7764;
-	box-shadow: 0 2px 8px rgb(39 51 47 / 28%);
+	background: theme('colors.action');
+	box-shadow: 0 2px 8px color-mix(in srgb, theme('colors.action') 28%, transparent);
 	cursor: grab;
 }

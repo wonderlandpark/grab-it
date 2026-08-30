@@ -29,10 +29,10 @@ export function RecommendationCard({
 			<button
 				type='button'
 				onClick={onToggleWish}
-				aria-label={wished ? `${experience.title} 찜 해제` : `${experience.title} 찜하기`}
-				className={`absolute right-4 top-12 z-10 rounded-full px-3 py-2 text-sm font-black shadow-sm ${wished ? 'bg-coral text-white' : 'bg-white text-ink'}`}
+				aria-label={wished ? `${experience.title} 잡기 취소` : `${experience.title} 잡기`}
+				className={`absolute right-4 top-12 z-10 rounded-full px-3 py-2 text-sm font-black shadow-sm transition-colors ${wished ? 'bg-glow text-ink hover:bg-glow/80' : 'bg-white text-ink hover:bg-sky/40'}`}
 			>
-				{wished ? '♥ 찜' : '♡ 찜'}
+				{wished ? '★' : '☆'}
 			</button>
 			<Link
 				href={{
@@ -43,7 +43,7 @@ export function RecommendationCard({
 				className='block'
 			>
 				<div className='flex min-h-36 flex-col justify-between bg-gradient-to-br from-mist to-white p-5'>
-					<div className='flex items-center justify-between text-xs font-bold text-leaf'>
+					<div className='flex items-center justify-between text-xs font-bold text-brand'>
 						<span>{rank ? `추천 ${rank}` : emotionLabel}</span>
 						<span>{Math.round(experience.space.distanceMeters / 100) / 10}km</span>
 					</div>
@@ -65,9 +65,7 @@ export function RecommendationCard({
 							<p className='font-bold'>
 								{time(experience.nextSlot.startsAt)} · {experience.durationMinutes}분
 							</p>
-							<p className='text-xs text-coral'>
-								{experience.nextSlot.availableSeats}자리 남음
-							</p>
+							<p className='text-xs text-brand'>{experience.nextSlot.availableSeats}자리 남음</p>
 						</div>
 						<ExperiencePrice
 							priceWon={experience.priceWon}

@@ -73,17 +73,17 @@ export default function BookingPage() {
 			<div className='mx-auto max-w-2xl px-5 py-10'>
 				{courseReturnTo && (
 					<Link href={courseReturnTo} className='mb-6 inline-block font-bold text-ink/60'>
-						← 코스로 돌아가기
+						← 궤적으로 돌아가기
 					</Link>
 				)}
-				<p className='text-sm font-bold text-leaf'>예약 티켓</p>
+				<p className='text-sm font-bold text-brand'>예약 티켓</p>
 				<h1 className='mt-2 text-3xl font-black'>{booking.slot.experience.title}</h1>
 				<div className='mt-6 rounded-[2rem] bg-white p-7 shadow-lg'>
 					<p className='font-bold'>{format(booking.slot.startsAt)}</p>
 					<p className='mt-1 text-ink/60'>
 						{booking.slot.experience.space.name} · {booking.slot.experience.space.address}
 					</p>
-					<p className='mt-2 text-xs font-bold text-coral'>현장결제 예정</p>
+					<p className='mt-2 text-xs font-bold text-ink/50'>현장결제 예정</p>
 					<div className='my-7 border-t border-dashed' />
 					{booking.status === 'CONFIRMED' && checkInUrl && (
 						<>
@@ -93,14 +93,14 @@ export default function BookingPage() {
 							</p>
 							<details className='mt-3 text-center text-xs'>
 								<summary>QR 대체 링크</summary>
-								<a href={checkInUrl} className='break-all text-leaf'>
+								<a href={checkInUrl} className='break-all text-brand hover:text-brand/80'>
 									{checkInUrl}
 								</a>
 							</details>
 						</>
 					)}
 					{booking.status === 'CHECKED_IN' && (
-						<p className='rounded-2xl bg-mist p-5 text-center font-black text-leaf'>
+						<p className='rounded-2xl bg-mist p-5 text-center font-black text-brand'>
 							체크인 완료 ✓
 						</p>
 					)}
@@ -113,7 +113,7 @@ export default function BookingPage() {
 					booking.slot.experience.isDemoPublic && (
 						<button
 							onClick={() => setDemoConfirm(true)}
-							className='mt-4 w-full rounded-2xl border border-leaf p-4 font-black text-leaf'
+							className='btn-secondary mt-4 w-full rounded-2xl p-4 font-black text-brand'
 						>
 							데모 체크인 체험
 						</button>
@@ -131,7 +131,7 @@ export default function BookingPage() {
 								<button
 									key={e.value}
 									onClick={() => setAfter(e.value)}
-									className={`rounded-xl border p-3 ${afterEmotion === e.value ? 'border-leaf bg-mist' : ''}`}
+									className={`btn-chip rounded-xl p-3 ${afterEmotion === e.value ? 'btn-chip-selected' : ''}`}
 								>
 									{e.emoji} {e.label}
 								</button>
@@ -139,13 +139,13 @@ export default function BookingPage() {
 						</div>
 						<p className='mt-5 font-bold'>좋았던 요소</p>
 						<div className='mt-2 flex flex-wrap gap-2'>
-							{['햇빛', '조용함', '몰입', '사람 온기', '움직임', '낯선 자극'].map((tag) => (
+							{['햇빛', '조용함', '몰입', '이색적', '움직임', '낯선 자극'].map((tag) => (
 								<button
 									key={tag}
 									onClick={() =>
 										setTags(tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag])
 									}
-									className={`rounded-full border px-3 py-2 text-sm ${tags.includes(tag) ? 'bg-leaf text-white' : ''}`}
+									className={`btn-chip rounded-full px-3 py-2 text-sm ${tags.includes(tag) ? 'btn-chip-selected' : ''}`}
 								>
 									{tag}
 								</button>
@@ -157,16 +157,13 @@ export default function BookingPage() {
 							className='mt-4 w-full rounded-xl border p-3'
 							placeholder='짧은 후기를 남겨 주세요'
 						/>
-						<button
-							onClick={review}
-							className='mt-3 w-full rounded-xl bg-leaf p-4 font-black text-white'
-						>
+						<button onClick={review} className='btn-primary mt-3 w-full rounded-xl p-4 font-black'>
 							감정 변화 기록하기
 						</button>
 					</section>
 				)}
 				{booking.review && (
-					<p className='mt-8 rounded-2xl bg-mist p-5 text-center font-bold text-leaf'>
+					<p className='mt-8 rounded-2xl bg-mist p-5 text-center font-bold text-brand'>
 						감정 변화 영수증을 기록했어요.
 					</p>
 				)}
@@ -181,7 +178,7 @@ export default function BookingPage() {
 							</p>
 							<button
 								onClick={demoCheckIn}
-								className='mt-6 w-full rounded-xl bg-leaf p-4 font-black text-white'
+								className='btn-primary mt-6 w-full rounded-xl p-4 font-black'
 							>
 								체크인 완료로 변경
 							</button>

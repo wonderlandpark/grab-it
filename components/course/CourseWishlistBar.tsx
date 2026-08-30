@@ -38,7 +38,7 @@ export function CourseWishlistBar({
 					if (!response.ok)
 						return {
 							id,
-							title: '이용할 수 없는 경험',
+							title: '지금은 이용할 수 없는 순간',
 							space: { name: '공개가 종료되었어요.' },
 						}
 					const data = await response.json()
@@ -46,7 +46,7 @@ export function CourseWishlistBar({
 				} catch {
 					return {
 						id,
-						title: '경험 정보를 불러오지 못했어요',
+						title: '순간 정보를 불러오지 못했어요',
 						space: { name: '새로고침 후 다시 확인해 주세요.' },
 					}
 				}
@@ -69,12 +69,18 @@ export function CourseWishlistBar({
 	return (
 		<>
 			<div className='fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-xl items-center gap-2 rounded-2xl bg-ink p-3 text-white shadow-2xl md:bottom-5'>
-				<button onClick={() => setOpen(true)} className='flex-1 px-2 text-left font-black'>
-					찜한 경험 {wishIds.length}개
-					<span className='ml-2 text-sm font-normal text-white/60'>찜 목록</span>
+				<button
+					onClick={() => setOpen(true)}
+					className='min-w-0 flex-1 rounded-xl px-2 py-2 text-left font-black transition-colors hover:bg-white/10'
+				>
+					잡은 순간 {wishIds.length}개
+					<span className='ml-2 text-sm font-normal text-white/60'>잡은 목록</span>
 				</button>
-				<button onClick={onCreate} className='rounded-xl bg-leaf px-4 py-3 font-black'>
-					코스 만들기
+				<button
+					onClick={onCreate}
+					className='btn-primary shrink-0 whitespace-nowrap rounded-xl px-4 py-3 font-black'
+				>
+					궤적 만들기
 				</button>
 			</div>
 			{open && (
@@ -88,8 +94,11 @@ export function CourseWishlistBar({
 					>
 						<div className='mx-auto max-w-2xl'>
 							<div className='flex items-center justify-between'>
-								<h2 className='text-2xl font-black'>찜한 경험 {wishIds.length}개</h2>
-								<button onClick={onClear} className='text-sm text-ink/50 underline'>
+								<h2 className='text-2xl font-black'>잡은 순간 {wishIds.length}개</h2>
+								<button
+									onClick={onClear}
+									className='btn-ghost rounded-lg px-2 py-1 text-sm underline'
+								>
 									전체 비우기
 								</button>
 							</div>
@@ -102,10 +111,13 @@ export function CourseWishlistBar({
 											className='flex items-center justify-between rounded-2xl bg-white p-4'
 										>
 											<div>
-												<strong>{item?.title || '경험 정보 불러오는 중…'}</strong>
+												<strong>{item?.title || '순간 정보 불러오는 중…'}</strong>
 												{item && <p className='text-sm text-ink/50'>{item.space.name}</p>}
 											</div>
-											<button onClick={() => onRemove(id)} className='px-3 text-sm text-coral'>
+											<button
+												onClick={() => onRemove(id)}
+												className='rounded-lg px-3 py-2 text-sm text-coral transition-colors hover:bg-coral/10'
+											>
 												삭제
 											</button>
 										</div>
@@ -114,9 +126,9 @@ export function CourseWishlistBar({
 							</div>
 							<button
 								onClick={onCreate}
-								className='mt-6 w-full rounded-2xl bg-leaf p-4 font-black text-white'
+								className='btn-primary mt-6 w-full rounded-2xl p-4 font-black'
 							>
-								찜한 경험으로 코스 만들기
+								잡은 순간으로 궤적 만들기
 							</button>
 						</div>
 					</section>

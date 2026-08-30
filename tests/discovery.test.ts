@@ -4,7 +4,7 @@ describe('rule-based discovery', () => {
 	it('gives matching, closer, faster slots a higher score', () => {
 		const now = new Date('2026-08-29T00:00:00Z')
 		const close = recommendationScore({
-			desiredEmotion: 'CALM',
+			desiredEmotions: ['CALM'],
 			emotions: ['CALM'],
 			distanceMeters: 300,
 			maxDistanceMeters: 3000,
@@ -13,7 +13,7 @@ describe('rule-based discovery', () => {
 			latest: new Date(now.getTime() + 180 * 60000),
 		})
 		const far = recommendationScore({
-			desiredEmotion: 'CALM',
+			desiredEmotions: ['CALM'],
 			emotions: ['ENERGY'],
 			distanceMeters: 2500,
 			maxDistanceMeters: 3000,
@@ -22,6 +22,29 @@ describe('rule-based discovery', () => {
 			latest: new Date(now.getTime() + 180 * 60000),
 		})
 		expect(close).toBeGreaterThan(far)
+	})
+
+	it('scores experiences matching both selected emotions above one match', () => {
+		const now = new Date('2026-08-29T00:00:00Z')
+		const base = {
+			desiredEmotions: ['CALM', 'FOCUS'] as const,
+			distanceMeters: 500,
+			maxDistanceMeters: 3000,
+			startsAt: new Date(now.getTime() + 60 * 60000),
+			earliest: now,
+			latest: new Date(now.getTime() + 180 * 60000),
+		}
+		const both = recommendationScore({
+			...base,
+			desiredEmotions: [...base.desiredEmotions],
+			emotions: ['CALM', 'FOCUS'],
+		})
+		const one = recommendationScore({
+			...base,
+			desiredEmotions: [...base.desiredEmotions],
+			emotions: ['CALM'],
+		})
+		expect(both).toBeGreaterThan(one)
 	})
 
 	it('calculates a realistic Seoul distance', () => {

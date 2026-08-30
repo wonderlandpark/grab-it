@@ -29,7 +29,7 @@ export default function Me() {
 			<AppShell>
 				<div className='grid min-h-[70vh] place-items-center text-center'>
 					<div>
-						<h1 className='text-3xl font-black'>내 경험을 한곳에서</h1>
+						<h1 className='text-3xl font-black'>내 예약</h1>
 						<p className='mt-2 text-ink/55'>예약과 감정 변화 기록을 확인해요.</p>
 						<SignInButton className='mt-6' />
 					</div>
@@ -54,7 +54,7 @@ export default function Me() {
 				<section className='mt-10'>
 					<div className='flex items-center justify-between'>
 						<h2 className='text-2xl font-black'>예정 예약</h2>
-						<Link href='/partner' className='text-sm font-bold text-leaf'>
+						<Link href='/partner' className='text-sm font-bold text-brand hover:text-brand/80'>
 							내 공간 관리 →
 						</Link>
 					</div>
@@ -69,7 +69,7 @@ export default function Me() {
 								<p className='mt-2 text-sm'>
 									{format(booking.slot.startsAt)} · {booking.slot.experience.space.name}
 								</p>
-								<span className='mt-3 inline-block rounded-full bg-mist px-3 py-1 text-xs font-bold text-leaf'>
+								<span className='mt-3 inline-block rounded-full bg-mist px-3 py-1 text-xs font-bold text-brand'>
 									QR 티켓 보기
 								</span>
 							</Link>
@@ -82,7 +82,7 @@ export default function Me() {
 					</div>
 				</section>
 				<section className='mt-10'>
-					<h2 className='text-2xl font-black'>지난 경험</h2>
+					<h2 className='text-2xl font-black'>지난 순간</h2>
 					<div className='mt-4 space-y-3'>
 						{past.map((booking) => (
 							<Link

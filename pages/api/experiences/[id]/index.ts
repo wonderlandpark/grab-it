@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			},
 		},
 	})
-	if (!experience) return res.status(404).json({ error: '경험을 찾을 수 없습니다.' })
+	if (!experience) return res.status(404).json({ error: '순간을 찾을 수 없습니다.' })
 	const reviews = await prisma.review.findMany({
 		where: { booking: { slot: { experienceId: id } }, isPublic: true, status: 'PUBLISHED' },
 		orderBy: { createdAt: 'desc' },

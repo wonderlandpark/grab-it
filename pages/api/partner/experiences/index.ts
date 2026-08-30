@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			(!Number.isInteger(originalPriceWon) || originalPriceWon <= priceWon)) ||
 		emotions.length === 0
 	)
-		return res.status(400).json({ error: '경험 정보를 확인해 주세요.' })
+		return res.status(400).json({ error: '순간 정보를 확인해 주세요.' })
 	const experience = await prisma.experience.create({
 		data: {
 			spaceId: space.id,

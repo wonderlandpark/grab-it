@@ -7,10 +7,11 @@ export function ExperiencePrice({
 	originalPriceWon: number | null
 	compact?: boolean
 }) {
-	if (!priceWon)
+	const free = priceWon === 0
+	const discounted = originalPriceWon !== null && originalPriceWon > priceWon
+	if (free && !discounted)
 		return <strong className={compact ? 'text-sm' : 'text-2xl font-black'}>무료</strong>
 
-	const discounted = originalPriceWon !== null && originalPriceWon > priceWon
 	const discountRate = discounted
 		? Math.round(((originalPriceWon - priceWon) / originalPriceWon) * 100)
 		: 0
@@ -21,13 +22,13 @@ export function ExperiencePrice({
 				<p className='text-xs text-ink/40 line-through'>{originalPriceWon.toLocaleString()}원</p>
 			)}
 			<div className='flex items-baseline justify-end gap-1.5'>
-				{discounted && <span className='text-sm font-black text-coral'>{discountRate}%</span>}
+				{discounted && <span className='text-sm font-black text-brand'>{discountRate}%</span>}
 				<strong className={compact ? 'text-sm' : 'text-2xl font-black'}>
-					{priceWon.toLocaleString()}원
+					{free ? '무료' : `${priceWon.toLocaleString()}원`}
 				</strong>
 			</div>
 			{discounted && !compact && (
-				<p className='mt-1 text-xs font-bold text-coral'>
+				<p className='mt-1 text-xs font-bold text-brand'>
 					{(originalPriceWon - priceWon).toLocaleString()}원 할인
 				</p>
 			)}

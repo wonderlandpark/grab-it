@@ -52,7 +52,7 @@ export default function CoursePage() {
 		const intent = readIntent()
 		if (!intent || !wishIds.length) {
 			setCourses([])
-			setError(wishIds.length ? '검색 조건을 다시 선택해 주세요.' : '찜한 경험이 없어요.')
+			setError(wishIds.length ? '검색 조건을 다시 선택해 주세요.' : '잡은 순간이 없어요.')
 			setLoading(false)
 			return
 		}
@@ -69,7 +69,7 @@ export default function CoursePage() {
 			if (!response.ok) throw new Error(data.error)
 			const nextCourses = (data.courses || []) as CourseRecommendation[]
 			setCourses(nextCourses)
-			if (!nextCourses.length) setError('이 시간대에는 찜한 경험을 연결할 수 없어요.')
+			if (!nextCourses.length) setError('이 시간대에는 잡은 순간을 연결할 수 없어요.')
 			else
 				writeCourseDraft({
 					createdAt: Date.now(),
@@ -80,7 +80,7 @@ export default function CoursePage() {
 					returnUrl: view?.returnUrl || '/',
 				})
 		} catch (reason) {
-			setError(reason instanceof Error ? reason.message : '코스를 만들지 못했습니다.')
+			setError(reason instanceof Error ? reason.message : '궤적을 만들지 못했습니다.')
 		} finally {
 			setLoading(false)
 		}
@@ -111,9 +111,9 @@ export default function CoursePage() {
 	return (
 		<AppShell>
 			<Head>
-				<title>오늘의 코스 · grabit</title>
+				<title>오늘의 궤적 · grabit</title>
 			</Head>
-			<div className='mx-auto max-w-6xl px-5 py-8'>
+			<div className={`mx-auto px-5 py-8 ${selectedCourse ? 'max-w-6xl' : 'max-w-[1600px]'}`}>
 				{selectedCourse ? (
 					<CourseDetail
 						course={selectedCourse}
@@ -126,29 +126,29 @@ export default function CoursePage() {
 						<button onClick={backToDiscovery} className='mb-7 font-bold text-ink/60'>
 							← 검색 결과로
 						</button>
-						<p className='font-bold text-leaf'>찜한 경험으로 구성했어요</p>
-						<h1 className='mt-2 text-4xl font-black'>가능한 코스 {courses.length}개</h1>
+						<p className='font-bold text-brand'>잡은 순간으로 구성했어요</p>
+						<h1 className='mt-2 text-4xl font-black'>가능한 궤적 {courses.length}개</h1>
 						<p className='mt-3 text-ink/55'>
 							시간·동선·남은 좌석을 반영해 실행 가능한 순서로 정리했어요.
 						</p>
 
 						{loading && (
-							<div className='mt-10 rounded-3xl bg-white p-10 text-center'>코스 만드는 중…</div>
+							<div className='mt-10 rounded-3xl bg-white p-10 text-center'>궤적 만드는 중…</div>
 						)}
 						{!loading && error && (
 							<div className='mt-10 rounded-3xl bg-white p-10 text-center'>
 								<p className='font-black'>{error}</p>
 								<button
 									onClick={backToDiscovery}
-									className='mt-5 rounded-full bg-leaf px-5 py-3 font-bold text-white'
+									className='btn-primary mt-5 rounded-full px-5 py-3 font-bold'
 								>
-									경험 다시 고르기
+									순간 다시 고르기
 								</button>
 							</div>
 						)}
 						{!loading && courses.length > 0 && (
-							<div className='mt-8 grid gap-5 lg:grid-cols-3'>
-								{courses.map((course, index) => (
+							<div className='mt-8 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-4'>
+								{courses.slice(0, 4).map((course, index) => (
 									<CourseCard
 										key={course.signature}
 										course={course}
@@ -178,20 +178,28 @@ function CourseCard({
 }) {
 	return (
 		<article
-			className={`relative rounded-[2rem] bg-white p-6 shadow-lg ${best ? 'ring-2 ring-leaf' : ''}`}
+			className={`relative flex min-h-[560px] flex-col rounded-[2rem] bg-white p-6 shadow-lg lg:min-h-[calc(100dvh-18rem)] ${best ? 'ring-2 ring-brand' : ''}`}
 		>
 			{best && (
-				<span className='absolute right-5 top-5 rounded-full bg-coral px-3 py-1 text-xs font-black text-white'>
-					가장 잘 맞는 코스
+				<span className='mb-5 self-start rounded-full bg-glow px-3 py-1 text-xs font-black text-ink'>
+					가장 잘 맞는 궤적
 				</span>
 			)}
-			<p className='text-sm font-bold text-leaf'>{time(course.startsAt)} 시작</p>
-			<h2 className='mt-2 pr-20 text-2xl font-black'>{course.items.length}개 경험 코스</h2>
-			<div className='mt-5 space-y-2 border-y border-black/5 py-4'>
+			<p className='text-sm font-bold text-brand'>{time(course.startsAt)} 시작</p>
+			<h2 className='mt-2 text-2xl font-black'>{course.items.length}개의 순간을 이은 궤적</h2>
+			<div className='mt-6 flex-1 space-y-4 border-y border-black/5 py-5'>
 				{course.items.map((item, index) => (
-					<p key={item.slot.id} className='text-sm'>
-						<strong>{index + 1}.</strong> {item.experience.title}
-					</p>
+					<div key={item.slot.id} className='flex gap-3'>
+						<span className='grid h-7 w-7 shrink-0 place-items-center rounded-full bg-mist text-xs font-black text-brand'>
+							{index + 1}
+						</span>
+						<div className='min-w-0 pt-0.5'>
+							<strong className='block leading-snug'>{item.experience.title}</strong>
+							<span className='mt-1 block text-xs text-ink/45'>
+								{time(item.slot.startsAt)} · {item.experience.durationMinutes}분
+							</span>
+						</div>
+					</div>
 				))}
 			</div>
 			<div className='mt-4 flex flex-wrap gap-2 text-xs'>
@@ -200,23 +208,25 @@ function CourseCard({
 				</span>
 				<span className='rounded-full bg-paper px-3 py-2'>이동 {course.totalTravelMinutes}분</span>
 				<span className='rounded-full bg-paper px-3 py-2'>
-					{course.totalPriceWon.toLocaleString()}원
+					{course.totalPriceWon === 0 ? '무료' : `${course.totalPriceWon.toLocaleString()}원`}
 				</span>
 				{course.totalDiscountWon > 0 && (
-					<span className='rounded-full bg-[#fff0ed] px-3 py-2 font-bold text-coral'>
+					<span className='rounded-full bg-glow/60 px-3 py-2 font-bold text-ink'>
 						{course.totalDiscountWon.toLocaleString()}원 할인
 					</span>
 				)}
 			</div>
 			{course.omitted.length > 0 && (
-				<p className='mt-4 text-xs text-ink/45'>찜한 경험 {course.omitted.length}개 제외</p>
+				<p className='mt-4 text-xs text-ink/45'>잡은 순간 {course.omitted.length}개 제외</p>
 			)}
-			<button
-				onClick={onOpen}
-				className='mt-5 w-full rounded-2xl border border-leaf p-3 font-black text-leaf'
-			>
-				이 코스 보기
-			</button>
+			<div className='mt-auto pt-6'>
+				<button
+					onClick={onOpen}
+					className='btn-secondary w-full rounded-2xl p-3 font-black text-brand'
+				>
+					이 궤적 보기
+				</button>
+			</div>
 		</article>
 	)
 }
@@ -235,17 +245,17 @@ function CourseDetail({
 	return (
 		<>
 			<button onClick={onBack} className='mb-7 font-bold text-ink/60'>
-				← 코스 전체보기
+				← 궤적 전체보기
 			</button>
-			<p className='font-bold text-leaf'>실시간 좌석은 예약할 때 다시 확인해요</p>
-			<h1 className='mt-2 text-4xl font-black'>오늘의 감정 코스</h1>
+			<p className='font-bold text-brand'>실시간 좌석은 예약할 때 다시 확인해요</p>
+			<h1 className='mt-2 text-4xl font-black'>오늘의 궤적</h1>
 			<div className='mt-8 grid items-start gap-6 lg:grid-cols-[1fr_320px]'>
 				<section className='rounded-[2rem] bg-white p-6 shadow-lg md:p-8'>
 					<div className='space-y-4'>
 						{course.items.map((item, index) => (
 							<div key={item.slot.id}>
-								<div className='flex items-center gap-3 text-xs font-bold text-leaf'>
-									<span className='grid h-7 w-7 place-items-center rounded-full bg-leaf text-white'>
+								<div className='flex items-center gap-3 text-xs font-bold text-brand'>
+									<span className='grid h-7 w-7 place-items-center rounded-full bg-action text-white'>
 										{index + 1}
 									</span>
 									{index === 0
@@ -270,7 +280,7 @@ function CourseDetail({
 													returnTo: `/course?candidate=${candidateIndex}`,
 												},
 											}}
-											className='rounded-xl bg-leaf px-4 py-3 text-sm font-black text-white'
+											className='btn-primary rounded-xl px-4 py-3 text-sm font-black'
 										>
 											상세·예약
 										</Link>
@@ -287,20 +297,25 @@ function CourseDetail({
 					</div>
 				</section>
 				<aside className='rounded-[2rem] bg-ink p-6 text-white lg:sticky lg:top-24'>
-					<h2 className='text-2xl font-black'>코스 요약</h2>
+					<h2 className='text-2xl font-black'>궤적 요약</h2>
 					<Summary label='총 소요시간' value={duration(course.startsAt, course.endsAt)} />
 					<Summary label='총 이동시간' value={`${course.totalTravelMinutes}분`} />
 					<Summary label='총 대기시간' value={`${course.totalWaitMinutes}분`} />
-					<Summary label='예상 총액' value={`${course.totalPriceWon.toLocaleString()}원`} />
+					<Summary
+						label='예상 총액'
+						value={
+							course.totalPriceWon === 0 ? '무료' : `${course.totalPriceWon.toLocaleString()}원`
+						}
+					/>
 					{course.totalDiscountWon > 0 && (
 						<Summary label='총 할인 금액' value={`${course.totalDiscountWon.toLocaleString()}원`} />
 					)}
 					{course.omitted.length > 0 && (
 						<div className='mt-5 border-t border-white/15 pt-5'>
-							<h3 className='font-black'>이번 코스에서 제외된 경험</h3>
+							<h3 className='font-black'>이번 궤적에 연결되지 못한 순간</h3>
 							{course.omitted.map((item) => (
 								<p key={item.experienceId} className='mt-3 text-xs leading-5 text-white/65'>
-									<strong className='text-white'>{item.experienceTitle || '찜한 경험'}</strong>
+									<strong className='text-white'>{item.experienceTitle || '잡은 순간'}</strong>
 									<br />
 									{item.reason}
 								</p>

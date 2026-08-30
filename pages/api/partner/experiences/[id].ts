@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const current = await prisma.experience.findFirst({
 		where: { id: String(req.query.id), space: { ownerId: partner.user.id } },
 	})
-	if (!current) return res.status(404).json({ error: '경험을 찾을 수 없습니다.' })
+	if (!current) return res.status(404).json({ error: '순간을 찾을 수 없습니다.' })
 	const durationMinutes =
 			req.body.durationMinutes === undefined ? undefined : Number(req.body.durationMinutes),
 		priceWon = req.body.priceWon === undefined ? undefined : Number(req.body.priceWon),

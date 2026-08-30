@@ -51,7 +51,7 @@ export default function AdminPartners() {
 									<div className='flex gap-2'>
 										<button
 											onClick={() => decide(item.id, 'APPROVED')}
-											className='rounded-xl bg-leaf px-4 text-white'
+											className='btn-primary rounded-xl px-4'
 										>
 											승인
 										</button>

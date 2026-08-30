@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		where: { id: String(req.query.id), space: { ownerId: partner.user.id } },
 		include: { _count: { select: { media: true } } },
 	})
-	if (!experience) return res.status(404).json({ error: '경험을 찾을 수 없습니다.' })
+	if (!experience) return res.status(404).json({ error: '순간을 찾을 수 없습니다.' })
 	const moved: string[] = []
 	try {
 		const form = formidable({
