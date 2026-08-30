@@ -10,6 +10,10 @@ import { emotionArtwork, representativeEmotion } from '@/lib/emotion-artwork'
 import type { CourseRecommendation, DiscoveryIntent, EmotionValue } from '@/types/domain'
 
 const PENDING_COURSE_BOOKING_KEY = 'pending-course-booking:v1'
+type BookingAnimationPhase = 'idle' | 'connecting' | 'success'
+
+const wait = (milliseconds: number) =>
+	new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds))
 
 const time = (value: string) =>
 	new Intl.DateTimeFormat('ko-KR', {
@@ -50,6 +54,8 @@ export default function CoursePage() {
 	const [ready, setReady] = useState(false)
 	const [booking, setBooking] = useState(false)
 	const [bookingError, setBookingError] = useState('')
+	const [bookingPhase, setBookingPhase] = useState<BookingAnimationPhase>('idle')
+	const [litItemCount, setLitItemCount] = useState(0)
 	const [loginModal, setLoginModal] = useState(false)
 	const [desiredEmotions, setDesiredEmotions] = useState<EmotionValue[]>([])
 	const candidateIndex =
@@ -132,21 +138,49 @@ export default function CoursePage() {
 		const intent = readIntent()
 		setBooking(true)
 		setBookingError('')
-		const response = await fetch('/api/bookings/course', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				slotIds: course.items.map((item) => item.slot.id),
-				desiredEmotion: intent?.desiredEmotion || course.items[0]?.experience.emotions[0],
-				currentState: intent?.currentState || null,
-			}),
-		})
-		const data = await response.json()
-		setBooking(false)
-		if (!response.ok) return setBookingError(data.error || '궤적을 예약하지 못했습니다.')
-		sessionStorage.removeItem(PENDING_COURSE_BOOKING_KEY)
-		wishlist.clear()
-		await router.push({ pathname: '/me', query: { courseBooked: data.bookings.length } })
+		setBookingPhase('connecting')
+		setLitItemCount(0)
+
+		const animateTrajectory = async () => {
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				setLitItemCount(course.items.length)
+				return
+			}
+			const interval = Math.max(400, Math.min(650, 2600 / Math.max(course.items.length, 1)))
+			for (let index = 1; index <= course.items.length; index += 1) {
+				await wait(interval)
+				setLitItemCount(index)
+			}
+			await wait(220)
+		}
+
+		try {
+			const [response] = await Promise.all([
+				fetch('/api/bookings/course', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						slotIds: course.items.map((item) => item.slot.id),
+						desiredEmotion: intent?.desiredEmotion || course.items[0]?.experience.emotions[0],
+						currentState: intent?.currentState || null,
+					}),
+				}),
+				animateTrajectory(),
+			])
+			const data = await response.json()
+			if (!response.ok) throw new Error(data.error || '궤적을 예약하지 못했습니다.')
+
+			setBookingPhase('success')
+			await wait(900)
+			sessionStorage.removeItem(PENDING_COURSE_BOOKING_KEY)
+			wishlist.clear()
+			await router.push({ pathname: '/me', query: { courseBooked: data.bookings.length } })
+		} catch (reason) {
+			setBooking(false)
+			setBookingPhase('idle')
+			setLitItemCount(0)
+			setBookingError(reason instanceof Error ? reason.message : '궤적을 예약하지 못했습니다.')
+		}
 	}
 
 	function reserveCourse(course: CourseRecommendation) {
@@ -190,6 +224,8 @@ export default function CoursePage() {
 						onRemove={removeExperience}
 						onReserve={() => reserveCourse(selectedCourse)}
 						booking={booking}
+						bookingPhase={bookingPhase}
+						litItemCount={litItemCount}
 						bookingError={bookingError}
 					/>
 				) : (
@@ -345,6 +381,8 @@ function CourseDetail({
 	onRemove,
 	onReserve,
 	booking,
+	bookingPhase,
+	litItemCount,
 	bookingError,
 }: {
 	course: CourseRecommendation
@@ -354,8 +392,42 @@ function CourseDetail({
 	onRemove: (id: string) => void
 	onReserve: () => void
 	booking: boolean
+	bookingPhase: BookingAnimationPhase
+	litItemCount: number
 	bookingError: string
 }) {
+	const itemRefs = useRef<Array<HTMLDivElement | null>>([])
+
+	useEffect(() => {
+		if (bookingPhase !== 'connecting' || litItemCount < 1) return
+		const currentItem = itemRefs.current[litItemCount - 1]
+		if (!currentItem) return
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			currentItem.scrollIntoView({ behavior: 'auto', block: 'center' })
+			return
+		}
+
+		const itemBounds = currentItem.getBoundingClientRect()
+		const startY = window.scrollY
+		const targetY = Math.max(
+			0,
+			startY + itemBounds.top - (window.innerHeight - itemBounds.height) / 2
+		)
+		const startedAt = performance.now()
+		const duration = 540
+		let animationFrame = 0
+
+		const scrollStep = (now: number) => {
+			const progress = Math.min(1, (now - startedAt) / duration)
+			const easedProgress = 1 - Math.pow(1 - progress, 3)
+			window.scrollTo(0, startY + (targetY - startY) * easedProgress)
+			if (progress < 1) animationFrame = window.requestAnimationFrame(scrollStep)
+		}
+
+		animationFrame = window.requestAnimationFrame(scrollStep)
+		return () => window.cancelAnimationFrame(animationFrame)
+	}, [bookingPhase, litItemCount])
+
 	return (
 		<>
 			<button onClick={onBack} className='mb-7 font-bold text-ink/60'>
@@ -364,21 +436,46 @@ function CourseDetail({
 			<p className='font-bold text-brand'>궤적 전체를 한 번에 예약할 수 있어요</p>
 			<h1 className='mt-2 text-4xl font-black'>오늘의 궤적</h1>
 			<div className='mt-8 grid items-start gap-6 lg:grid-cols-[1fr_320px]'>
-				<section className='rounded-[2rem] bg-white p-6 shadow-lg md:p-8'>
+				<section
+					className={`rounded-[2rem] bg-white p-6 shadow-lg transition-all duration-500 md:p-8 ${bookingPhase === 'success' ? 'shadow-[0_0_28px_rgba(248,255,142,0.55)] ring-2 ring-glow' : ''}`}
+				>
+					{bookingPhase === 'success' && (
+						<div
+							role='status'
+							className='mb-6 animate-pulse rounded-2xl bg-glow px-5 py-4 text-center font-black text-ink motion-reduce:animate-none'
+						>
+							궤적을 잡았어요!
+						</div>
+					)}
 					<div className='space-y-4'>
 						{course.items.map((item, index) => (
-							<div key={item.slot.id}>
+							<div
+								key={item.slot.id}
+								ref={(element) => {
+									itemRefs.current[index] = element
+								}}
+							>
 								<div className='flex items-center gap-3 text-xs font-bold text-brand'>
 									<CourseEmotionMarker
 										desiredEmotions={desiredEmotions}
 										experienceEmotions={item.experience.emotions}
+										illuminated={
+											bookingPhase === 'idle' || bookingPhase === 'success' || index < litItemCount
+										}
+										animating={bookingPhase !== 'idle'}
 									/>
 									{index === 0
 										? `출발지에서 약 ${item.travelMinutes}분`
 										: `이동·준비 약 ${item.travelMinutes}분`}
 									{item.waitMinutes > 0 && ` · 대기 ${item.waitMinutes}분`}
 								</div>
-								<div className='ml-4 border-l-2 border-action/20 py-3 pl-6'>
+								<div
+									className={`ml-4 border-l py-3 pl-6 transition-colors duration-500 ${
+										bookingPhase !== 'idle' && index < litItemCount
+											? 'border-glow'
+											: 'border-action/20'
+									}`}
+								>
 									<p className='text-sm font-bold'>
 										{time(item.slot.startsAt)} ~ {time(item.slot.endsAt)}
 									</p>
@@ -448,7 +545,11 @@ function CourseDetail({
 						disabled={booking}
 						className='btn-primary mt-6 w-full rounded-2xl p-4 font-black'
 					>
-						{booking ? '전체 좌석 확인 중…' : `${course.items.length}개 순간 예약하기`}
+						{bookingPhase === 'success'
+							? '궤적을 잡았어요!'
+							: booking
+								? '순간을 연결하는 중…'
+								: `${course.items.length}개 순간 예약하기`}
 					</button>
 					{bookingError && <p className='mt-3 text-sm font-bold text-coral'>{bookingError}</p>}
 				</aside>
@@ -460,14 +561,27 @@ function CourseDetail({
 function CourseEmotionMarker({
 	desiredEmotions,
 	experienceEmotions,
+	illuminated = true,
+	animating = false,
 }: {
 	desiredEmotions: EmotionValue[]
 	experienceEmotions: EmotionValue[]
+	illuminated?: boolean
+	animating?: boolean
 }) {
 	const emotion = representativeEmotion(desiredEmotions, experienceEmotions)
 
 	return (
-		<span className='grid h-8 w-8 shrink-0 place-items-center' aria-hidden='true'>
+		<span
+			className={`grid h-8 w-8 shrink-0 place-items-center transition-all duration-300 ${
+				animating && illuminated
+					? 'scale-110 rounded-full bg-glow shadow-[0_0_14px_rgba(248,255,142,0.75)]'
+					: animating
+						? 'scale-90 opacity-25 grayscale'
+						: ''
+			}`}
+			aria-hidden='true'
+		>
 			{emotion ? (
 				<img src={emotionArtwork[emotion].src} alt='' className='h-7 w-7 object-contain' />
 			) : (

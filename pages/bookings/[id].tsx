@@ -116,16 +116,14 @@ export default function BookingPage() {
 						<p className='rounded-2xl bg-black/5 p-5 text-center font-black'>취소된 예약입니다.</p>
 					)}
 				</div>
-				{booking.status === 'CONFIRMED' &&
-					session?.user.isDemo &&
-					booking.slot.experience.isDemoPublic && (
-						<button
-							onClick={() => setDemoConfirm(true)}
-							className='btn-secondary mt-4 w-full rounded-2xl p-4 font-black text-brand'
-						>
-							데모 체크인 체험
-						</button>
-					)}
+				{booking.status === 'CONFIRMED' && session?.user.isDemo && (
+					<button
+						onClick={() => setDemoConfirm(true)}
+						className='btn-secondary mt-4 w-full rounded-2xl p-4 font-black text-brand'
+					>
+						데모 체크인 체험
+					</button>
+				)}
 				{booking.status === 'CONFIRMED' && new Date(booking.slot.startsAt) > new Date() && (
 					<button onClick={cancel} className='mt-4 text-sm text-ink/50 underline'>
 						예약 취소

@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		typeof req.body?.currentState === 'string' ? req.body.currentState.slice(0, 40) : null
 	if (!slotIds.length || slotIds.length > 50 || !emotions.has(desiredEmotion))
 		return res.status(400).json({ error: '궤적 예약 정보를 확인해 주세요.' })
+	const courseGroupId = randomUUID()
 
 	try {
 		const bookings = await prisma.$transaction(
@@ -77,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				}
 
 				const created = []
-				for (const slotId of slotIds) {
+				for (const [courseOrder, slotId] of slotIds.entries()) {
 					const id = randomUUID()
 					created.push(
 						await tx.booking.create({
@@ -85,6 +86,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 								id,
 								slotId,
 								userId: user.id,
+								courseGroupId,
+								courseOrder,
 								desiredEmotion,
 								currentState,
 								qrTokenHash: hashToken(bookingToken(id)),

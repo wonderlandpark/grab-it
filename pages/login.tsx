@@ -39,12 +39,6 @@ export default function LoginPage() {
 					>
 						게스트로 체험하기
 					</button>
-					<button
-						onClick={() => signIn('kakao', { callbackUrl })}
-						className='mt-3 w-full rounded-2xl bg-[#FEE500] px-5 py-4 font-black text-[#191919]'
-					>
-						카카오로 계속하기
-					</button>
 				</section>
 			</main>
 		</>

@@ -9,6 +9,8 @@ export function bookingView(booking: any) {
 	return {
 		id: booking.id,
 		status: booking.status,
+		courseGroupId: booking.courseGroupId,
+		courseOrder: booking.courseOrder,
 		currentState: booking.currentState,
 		desiredEmotion: booking.desiredEmotion,
 		qrToken: bookingToken(booking.id),
@@ -36,6 +38,7 @@ export function bookingView(booking: any) {
 				title: booking.slot.experience.title,
 				priceWon: booking.slot.experience.priceWon,
 				isDemoPublic: booking.slot.experience.isDemoPublic,
+				emotions: booking.slot.experience.emotions.map((item: any) => item.emotion),
 				space: {
 					id: booking.slot.experience.space.id,
 					name: booking.slot.experience.space.name,
@@ -58,6 +61,11 @@ export const bookingInclude = {
 		},
 	},
 	slot: {
-		include: { bookings: { select: { status: true } }, experience: { include: { space: true } } },
+		include: {
+			bookings: { select: { status: true } },
+			experience: {
+				include: { space: true, emotions: { select: { emotion: true } } },
+			},
+		},
 	},
 } as const

@@ -91,6 +91,8 @@ export interface ExperienceDetail extends Omit<ExperienceRecommendation, 'nextSl
 export interface BookingTicket {
 	id: string
 	status: 'CONFIRMED' | 'CANCELLED' | 'CHECKED_IN'
+	courseGroupId: string | null
+	courseOrder: number | null
 	currentState: string | null
 	desiredEmotion: EmotionValue
 	qrToken: string
@@ -103,6 +105,7 @@ export interface BookingTicket {
 			title: string
 			priceWon: number
 			isDemoPublic: boolean
+			emotions: EmotionValue[]
 			space: { id: string; name: string; address: string }
 		}
 	}

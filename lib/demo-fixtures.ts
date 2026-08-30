@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import { createHash, randomUUID } from 'crypto'
 import type { Emotion, Prisma } from '@prisma/client'
 
 const shifted = (date: Date, minutes: number) => new Date(date.getTime() + minutes * 60_000)
@@ -29,6 +29,18 @@ const upcomingMoment: DemoMoment = {
 	desiredEmotion: 'REFRESH',
 }
 
+const upcomingCourseMoment: DemoMoment = {
+	title: '조용한 책방에서 고르는 한 문장',
+	description: '작은 책방의 빈자리에서 오늘 마음에 남길 문장을 천천히 골라보는 순간이에요.',
+	durationMinutes: 40,
+	priceWon: 7000,
+	originalPriceWon: 12000,
+	ambienceTags: ['책방', '한 문장', '고요함'],
+	emotions: ['CALM', 'FOCUS'],
+	currentState: '마음이 복잡해요',
+	desiredEmotion: 'CALM',
+}
+
 const reviewedMoment: DemoMoment = {
 	title: '낯선 이미지에 머무는 35분',
 	description: '작은 전시 공간에서 새로운 장면을 천천히 감상하는 순간이에요.',
@@ -53,6 +65,18 @@ const pendingReviewMoment: DemoMoment = {
 	desiredEmotion: 'ENERGY',
 }
 
+const cancelledMoment: DemoMoment = {
+	title: '노을 아래 잠시 걷는 30분',
+	description: '바깥 공기를 마시며 천천히 걷는 짧은 순간이에요.',
+	durationMinutes: 30,
+	priceWon: 5000,
+	originalPriceWon: 9000,
+	ambienceTags: ['노을', '산책', '바깥 공기'],
+	emotions: ['LIBERATION', 'REFRESH'],
+	currentState: '답답해요',
+	desiredEmotion: 'LIBERATION',
+}
+
 export async function createGuestDemoFixtures(
 	tx: Prisma.TransactionClient,
 	userId: string,
@@ -67,13 +91,20 @@ export async function createGuestDemoFixtures(
 			? configuredUpcomingStartsAt
 			: shifted(now, 24 * 60)
 	const suffix = uuid.replaceAll('-', '').slice(0, 12)
+	const courseGroupId = randomUUID()
+	const pastCourseGroupId = randomUUID()
 	const spaceId = `guest-space-${suffix}`
 	const upcomingExperienceId = `guest-upcoming-experience-${suffix}`
+	const upcomingCourseExperienceId = `guest-upcoming-course-experience-${suffix}`
 	const reviewedExperienceId = `guest-reviewed-experience-${suffix}`
 	const pendingReviewExperienceId = `guest-pending-review-experience-${suffix}`
+	const cancelledExperienceId = `guest-cancelled-experience-${suffix}`
 	const reviewedSlotId = `guest-reviewed-slot-${suffix}`
 	const pendingReviewSlotId = `guest-pending-review-slot-${suffix}`
+	const cancelledSlotId = `guest-cancelled-slot-${suffix}`
 	const openSlotId = `guest-open-slot-${suffix}`
+	const courseOpenSlotId = `guest-course-open-slot-${suffix}`
+	const upcomingCourseStartsAt = shifted(upcomingStartsAt, upcomingMoment.durationMinutes + 30)
 
 	await tx.space.create({
 		data: {
@@ -93,6 +124,7 @@ export async function createGuestDemoFixtures(
 					{
 						id: upcomingExperienceId,
 						...experienceData(upcomingMoment),
+						isDemoPublic: true,
 						slots: {
 							create: slotData(
 								openSlotId,
@@ -115,6 +147,19 @@ export async function createGuestDemoFixtures(
 						},
 					},
 					{
+						id: upcomingCourseExperienceId,
+						...experienceData(upcomingCourseMoment),
+						isDemoPublic: true,
+						slots: {
+							create: slotData(
+								courseOpenSlotId,
+								upcomingCourseStartsAt,
+								upcomingCourseMoment.durationMinutes,
+								'OPEN'
+							),
+						},
+					},
+					{
 						id: pendingReviewExperienceId,
 						...experienceData(pendingReviewMoment),
 						slots: {
@@ -126,22 +171,55 @@ export async function createGuestDemoFixtures(
 							),
 						},
 					},
+					{
+						id: cancelledExperienceId,
+						...experienceData(cancelledMoment),
+						slots: {
+							create: slotData(
+								cancelledSlotId,
+								shifted(now, -12 * 60),
+								cancelledMoment.durationMinutes,
+								'CLOSED'
+							),
+						},
+					},
 				],
 			},
 		},
 	})
 
 	await tx.booking.create({
-		data: bookingData({
-			id: `guest-upcoming-booking-${suffix}`,
-			slotId: openSlotId,
-			userId,
-			uuid,
-			kind: 'upcoming',
-			moment: upcomingMoment,
-			status: 'CONFIRMED',
-			createdAt: now,
-		}),
+		data: {
+			...bookingData({
+				id: `guest-upcoming-booking-${suffix}`,
+				slotId: openSlotId,
+				userId,
+				uuid,
+				kind: 'upcoming',
+				moment: upcomingMoment,
+				status: 'CONFIRMED',
+				createdAt: now,
+			}),
+			courseGroupId,
+			courseOrder: 0,
+		},
+	})
+
+	await tx.booking.create({
+		data: {
+			...bookingData({
+				id: `guest-upcoming-course-booking-${suffix}`,
+				slotId: courseOpenSlotId,
+				userId,
+				uuid,
+				kind: 'upcoming-course',
+				moment: upcomingCourseMoment,
+				status: 'CONFIRMED',
+				createdAt: now,
+			}),
+			courseGroupId,
+			courseOrder: 1,
+		},
 	})
 
 	await tx.booking.create({
@@ -156,6 +234,8 @@ export async function createGuestDemoFixtures(
 				status: 'CHECKED_IN',
 				createdAt: shifted(now, -3 * 24 * 60 - 60),
 			}),
+			courseGroupId: pastCourseGroupId,
+			courseOrder: 0,
 			checkedInAt: shifted(now, -3 * 24 * 60),
 			review: {
 				create: {
@@ -180,7 +260,27 @@ export async function createGuestDemoFixtures(
 				status: 'CHECKED_IN',
 				createdAt: shifted(now, -24 * 60 - 60),
 			}),
+			courseGroupId: pastCourseGroupId,
+			courseOrder: 1,
 			checkedInAt: shifted(now, -24 * 60),
+		},
+	})
+
+	await tx.booking.create({
+		data: {
+			...bookingData({
+				id: `guest-cancelled-booking-${suffix}`,
+				slotId: cancelledSlotId,
+				userId,
+				uuid,
+				kind: 'cancelled',
+				moment: cancelledMoment,
+				status: 'CANCELLED',
+				createdAt: shifted(now, -12 * 60 - 60),
+			}),
+			courseGroupId: pastCourseGroupId,
+			courseOrder: 2,
+			cancelledAt: shifted(now, -12 * 60 - 30),
 		},
 	})
 }
@@ -226,7 +326,7 @@ function bookingData({
 	uuid: string
 	kind: string
 	moment: DemoMoment
-	status: 'CONFIRMED' | 'CHECKED_IN'
+	status: 'CONFIRMED' | 'CANCELLED' | 'CHECKED_IN'
 	createdAt: Date
 }) {
 	return {

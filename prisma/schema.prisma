@@ -273,6 +273,8 @@ model Booking {
   id             String        @id @default(cuid())
   slotId         String
   userId         String
+  courseGroupId  String?       @db.Uuid
+  courseOrder    Int?
   status         BookingStatus @default(CONFIRMED)
   currentState   String?       @db.VarChar(40)
   desiredEmotion Emotion
@@ -287,6 +289,7 @@ model Booking {
 
   @@unique([slotId, userId])
   @@index([userId, status, createdAt])
+  @@index([userId, courseGroupId])
   @@index([slotId, status])
 }
 

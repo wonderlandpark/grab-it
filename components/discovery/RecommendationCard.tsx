@@ -138,16 +138,40 @@ function EmotionWishArtwork({
 	filled: boolean
 }) {
 	const outlineFilterId = `${filterId}-outline`
+	const activeFillFilterId = `${filterId}-active-fill`
 
 	return (
 		<svg aria-hidden='true' viewBox='0 0 48 48' className='h-7 w-7 shrink-0 overflow-visible'>
 			<defs>
+				<filter
+					id={activeFillFilterId}
+					x='-35%'
+					y='-35%'
+					width='170%'
+					height='170%'
+					colorInterpolationFilters='sRGB'
+				>
+					<feMorphology in='SourceAlpha' operator='dilate' radius='6' result='expanded' />
+					<feMorphology in='expanded' operator='erode' radius='4' result='filledShape' />
+					<feFlood floodColor='#FFFFFF' result='white' />
+					<feComposite in='white' in2='filledShape' operator='in' />
+				</filter>
 				<filter id={outlineFilterId} colorInterpolationFilters='sRGB'>
 					<feMorphology in='SourceAlpha' operator='dilate' radius='2' result='outlineShape' />
 					<feFlood floodColor='#F8FF8E' result='yellow' />
 					<feComposite in='yellow' in2='outlineShape' operator='in' />
 				</filter>
 			</defs>
+			<image
+				href={src}
+				x='4'
+				y='4'
+				width='40'
+				height='40'
+				preserveAspectRatio='xMidYMid meet'
+				filter={`url(#${activeFillFilterId})`}
+				className={`transition-opacity ${filled ? 'opacity-100' : 'opacity-0'}`}
+			/>
 			<image
 				href={src}
 				x='4'
