@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ExperienceRecommendation } from '@/types/domain'
 
+type WishlistExperience = Pick<ExperienceRecommendation, 'id' | 'title' | 'space'>
+
 interface SelectedExperienceLabel {
 	id: string
 	title: string
@@ -15,7 +17,7 @@ export function CourseWishlistBar({
 	onCreate,
 }: {
 	wishIds: string[]
-	experiences: ExperienceRecommendation[]
+	experiences: WishlistExperience[]
 	onRemove: (id: string) => void
 	onClear: () => void
 	onCreate: () => void

@@ -56,7 +56,7 @@ export default function Partner() {
 				<div className='mt-6 grid grid-cols-2 gap-3 md:grid-cols-4'>
 					{[
 						['열린 예약 시간', slots.length],
-						['판매된 유휴 좌석', sold],
+						['판매된 유휴 자리', sold],
 						['회수 예상 매출', `${revenue.toLocaleString()}원`],
 						['운영 상태', '승인됨'],
 					].map(([label, value]) => (

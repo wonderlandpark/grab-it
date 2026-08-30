@@ -168,7 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 				experienceTitle: visibleExperiences.get(experienceId),
 				reason: visibleExperiences.has(experienceId)
 					? '현재 선택한 이동 거리 밖에 있어요.'
-					: '공개가 종료되었거나 현재 남은 좌석이 없어요.',
+					: '공개가 종료되었거나 현재 남은 자리가 없어요.',
 			}))
 		for (const course of result.courses) course.omitted.push(...unavailable)
 	}

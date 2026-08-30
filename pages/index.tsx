@@ -433,7 +433,7 @@ export default function Home() {
 					{/* <p className='mb-3 font-bold text-brand'>
 						검색하다 지치기 전에, 지금의 나에게 맞는 오늘의 움직임
 					</p> */}
-					<h1 className='max-w-3xl text-4xl font-black leading-tight md:text-6xl '>
+					<h1 className='max-w-3xl text-4xl font-black leading-tight md:text-6xl'>
 						어떤 감정을
 						<br />
 						느끼고 싶나요?
@@ -690,8 +690,8 @@ export default function Home() {
 								{loadingMore
 									? '다음 순간을 불러오는 중…'
 									: results.nextOffset === null
-										? '조건에 맞는 순간을 모두 확인했어요.'
-										: '아래로 내리면 더 보여드려요.'}
+										? '조건에 맞는 순간을 모두 불러왔어요.'
+										: '더 많은 순간을 불러오려면 아래로 스크롤하세요'}
 							</div>
 						)}
 					</div>

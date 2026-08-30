@@ -1,11 +1,14 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import { readCourseDraft, readDiscoveryView, writeCourseDraft } from '@/lib/course-storage'
 import type { CourseRecommendation, DiscoveryIntent } from '@/types/domain'
+
+const PENDING_COURSE_BOOKING_KEY = 'pending-course-booking:v1'
 
 const time = (value: string) =>
 	new Intl.DateTimeFormat('ko-KR', {
@@ -37,11 +40,16 @@ function readIntent() {
 
 export default function CoursePage() {
 	const router = useRouter()
+	const { status } = useSession()
 	const wishlist = useCourseWishlist()
+	const resumedBooking = useRef(false)
 	const [courses, setCourses] = useState<CourseRecommendation[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
 	const [ready, setReady] = useState(false)
+	const [booking, setBooking] = useState(false)
+	const [bookingError, setBookingError] = useState('')
+	const [loginModal, setLoginModal] = useState(false)
 	const candidateIndex =
 		typeof router.query.candidate === 'string' ? Number(router.query.candidate) : null
 	const selectedCourse =
@@ -108,6 +116,53 @@ export default function CoursePage() {
 		void router.replace('/course')
 	}
 
+	async function submitCourseBooking(course: CourseRecommendation) {
+		const intent = readIntent()
+		setBooking(true)
+		setBookingError('')
+		const response = await fetch('/api/bookings/course', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				slotIds: course.items.map((item) => item.slot.id),
+				desiredEmotion: intent?.desiredEmotion || course.items[0]?.experience.emotions[0],
+				currentState: intent?.currentState || null,
+			}),
+		})
+		const data = await response.json()
+		setBooking(false)
+		if (!response.ok) return setBookingError(data.error || '궤적을 예약하지 못했습니다.')
+		sessionStorage.removeItem(PENDING_COURSE_BOOKING_KEY)
+		wishlist.clear()
+		await router.push({ pathname: '/me', query: { courseBooked: data.bookings.length } })
+	}
+
+	function reserveCourse(course: CourseRecommendation) {
+		if (status !== 'authenticated') {
+			sessionStorage.setItem(
+				PENDING_COURSE_BOOKING_KEY,
+				JSON.stringify({ signature: course.signature, candidateIndex })
+			)
+			setLoginModal(true)
+			return
+		}
+		void submitCourseBooking(course)
+	}
+
+	useEffect(() => {
+		if (
+			status !== 'authenticated' ||
+			!selectedCourse ||
+			router.query.resumeCourseBooking !== '1' ||
+			resumedBooking.current
+		)
+			return
+		const pending = JSON.parse(sessionStorage.getItem(PENDING_COURSE_BOOKING_KEY) || 'null')
+		if (pending?.signature !== selectedCourse.signature) return
+		resumedBooking.current = true
+		void submitCourseBooking(selectedCourse)
+	}, [status, selectedCourse, router.query.resumeCourseBooking]) // eslint-disable-line react-hooks/exhaustive-deps
+
 	return (
 		<AppShell>
 			<Head>
@@ -120,6 +175,9 @@ export default function CoursePage() {
 						candidateIndex={candidateIndex!}
 						onBack={() => void router.replace('/course')}
 						onRemove={removeExperience}
+						onReserve={() => reserveCourse(selectedCourse)}
+						booking={booking}
+						bookingError={bookingError}
 					/>
 				) : (
 					<>
@@ -129,7 +187,7 @@ export default function CoursePage() {
 						<p className='font-bold text-brand'>잡은 순간으로 구성했어요</p>
 						<h1 className='mt-2 text-4xl font-black'>가능한 궤적 {courses.length}개</h1>
 						<p className='mt-3 text-ink/55'>
-							시간·동선·남은 좌석을 반영해 실행 가능한 순서로 정리했어요.
+							시간·동선·남은 자리를 반영해 실행 가능한 순서로 정리했어요.
 						</p>
 
 						{loading && (
@@ -163,6 +221,37 @@ export default function CoursePage() {
 					</>
 				)}
 			</div>
+			{loginModal && selectedCourse && (
+				<div
+					role='dialog'
+					aria-modal='true'
+					className='fixed inset-0 z-[100] grid place-items-center bg-black/40 p-5'
+				>
+					<div className='w-full max-w-md rounded-[2rem] bg-white p-7 shadow-2xl'>
+						<h2 className='text-2xl font-black'>궤적을 예약하려면 계속해 주세요.</h2>
+						<p className='mt-2 text-sm text-ink/55'>
+							선택한 {selectedCourse.items.length}개의 순간과 시간은 그대로 유지됩니다.
+						</p>
+						<Link
+							href={{
+								pathname: '/login',
+								query: {
+									callbackUrl: `/course?candidate=${candidateIndex}&resumeCourseBooking=1`,
+								},
+							}}
+							className='btn-primary mt-7 w-full rounded-2xl p-4 font-black'
+						>
+							로그인 페이지로 계속하기
+						</Link>
+						<button
+							onClick={() => setLoginModal(false)}
+							className='mt-4 w-full text-sm text-ink/45'
+						>
+							닫기
+						</button>
+					</div>
+				</div>
+			)}
 		</AppShell>
 	)
 }
@@ -224,7 +313,7 @@ function CourseCard({
 					onClick={onOpen}
 					className='btn-secondary w-full rounded-2xl p-3 font-black text-brand'
 				>
-					이 궤적 보기
+					이 궤적 선택하기
 				</button>
 			</div>
 		</article>
@@ -236,18 +325,24 @@ function CourseDetail({
 	candidateIndex,
 	onBack,
 	onRemove,
+	onReserve,
+	booking,
+	bookingError,
 }: {
 	course: CourseRecommendation
 	candidateIndex: number
 	onBack: () => void
 	onRemove: (id: string) => void
+	onReserve: () => void
+	booking: boolean
+	bookingError: string
 }) {
 	return (
 		<>
 			<button onClick={onBack} className='mb-7 font-bold text-ink/60'>
 				← 궤적 전체보기
 			</button>
-			<p className='font-bold text-brand'>실시간 좌석은 예약할 때 다시 확인해요</p>
+			<p className='font-bold text-brand'>궤적 전체를 한 번에 예약할 수 있어요</p>
 			<h1 className='mt-2 text-4xl font-black'>오늘의 궤적</h1>
 			<div className='mt-8 grid items-start gap-6 lg:grid-cols-[1fr_320px]'>
 				<section className='rounded-[2rem] bg-white p-6 shadow-lg md:p-8'>
@@ -276,13 +371,12 @@ function CourseDetail({
 											href={{
 												pathname: `/experiences/${item.experience.id}`,
 												query: {
-													slotId: item.slot.id,
 													returnTo: `/course?candidate=${candidateIndex}`,
 												},
 											}}
 											className='btn-primary rounded-xl px-4 py-3 text-sm font-black'
 										>
-											상세·예약
+											상세 보기
 										</Link>
 										<button
 											onClick={() => onRemove(item.experience.id)}
@@ -329,6 +423,14 @@ function CourseDetail({
 							</strong>
 						</div>
 					</div>
+					<button
+						onClick={onReserve}
+						disabled={booking}
+						className='btn-primary mt-6 w-full rounded-2xl p-4 font-black'
+					>
+						{booking ? '전체 좌석 확인 중…' : `${course.items.length}개 순간 예약하기`}
+					</button>
+					{bookingError && <p className='mt-3 text-sm font-bold text-coral'>{bookingError}</p>}
 				</aside>
 			</div>
 		</>

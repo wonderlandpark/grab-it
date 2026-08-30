@@ -64,16 +64,24 @@ export default function BookingPage() {
 		)
 	const checkInUrl =
 		typeof window === 'undefined' ? '' : `${window.location.origin}/check-in/${booking.qrToken}`
-	const courseReturnTo =
-		typeof router.query.returnTo === 'string' && router.query.returnTo.startsWith('/course')
+	const safeReturnTo =
+		typeof router.query.returnTo === 'string' &&
+		(router.query.returnTo.startsWith('/course') || router.query.returnTo === '/me')
 			? router.query.returnTo
 			: null
+	const returnLabel = safeReturnTo?.startsWith('/course')
+		? '← 궤적으로 돌아가기'
+		: '← 나의 순간으로 돌아가기'
+	const reviewEmotion = booking.review
+		? emotions.find((emotion) => emotion.value === booking.review?.afterEmotion)?.label ||
+			booking.review.afterEmotion
+		: null
 	return (
 		<AppShell>
 			<div className='mx-auto max-w-2xl px-5 py-10'>
-				{courseReturnTo && (
-					<Link href={courseReturnTo} className='mb-6 inline-block font-bold text-ink/60'>
-						← 궤적으로 돌아가기
+				{safeReturnTo && (
+					<Link href={safeReturnTo} className='mb-6 inline-block font-bold text-ink/60'>
+						{returnLabel}
 					</Link>
 				)}
 				<p className='text-sm font-bold text-brand'>예약 티켓</p>
@@ -155,7 +163,7 @@ export default function BookingPage() {
 							value={body}
 							onChange={(e) => setBody(e.target.value.slice(0, 500))}
 							className='mt-4 w-full rounded-xl border p-3'
-							placeholder='짧은 후기를 남겨 주세요'
+							placeholder='감정 변화를 남겨 주세요'
 						/>
 						<button onClick={review} className='btn-primary mt-3 w-full rounded-xl p-4 font-black'>
 							감정 변화 기록하기
@@ -163,9 +171,28 @@ export default function BookingPage() {
 					</section>
 				)}
 				{booking.review && (
-					<p className='mt-8 rounded-2xl bg-mist p-5 text-center font-bold text-brand'>
-						감정 변화 영수증을 기록했어요.
-					</p>
+					<section className='mt-8 rounded-[2rem] bg-white p-7 shadow-sm'>
+						<p className='text-sm font-bold text-brand'>감정 변화 기록</p>
+						<h2 className='mt-2 text-2xl font-black'>이용 후 · {reviewEmotion}</h2>
+						{booking.review.highlightTags.length > 0 && (
+							<div className='mt-4 flex flex-wrap gap-2'>
+								{booking.review.highlightTags.map((tag) => (
+									<span
+										key={tag}
+										className='rounded-full bg-mist px-3 py-2 text-sm font-bold text-brand'
+									>
+										#{tag}
+									</span>
+								))}
+							</div>
+						)}
+						<div className='mt-5 rounded-2xl bg-paper p-5'>
+							<p className='text-xs font-bold text-ink/45'>내가 남긴 기록</p>
+							<p className='mt-2 whitespace-pre-wrap leading-7 text-ink/75'>
+								{booking.review.body || '작성한 감정 변화가 없어요.'}
+							</p>
+						</div>
+					</section>
 				)}
 				{error && <p className='mt-4 text-coral'>{error}</p>}
 				{demoConfirm && (

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 
 const items = [
 	{ href: '/', label: '홈', icon: '⌂' },
-	{ href: '/me', label: '내 예약', icon: '▣' },
+	{ href: '/me', label: '나의 순간', icon: '▣' },
 	{ href: '/partner', label: '내 정보', icon: '◡' },
 ]
 

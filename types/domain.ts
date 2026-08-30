@@ -106,7 +106,13 @@ export interface BookingTicket {
 			space: { id: string; name: string; address: string }
 		}
 	}
-	review: { id: string } | null
+	review: {
+		id: string
+		afterEmotion: EmotionValue
+		highlightTags: string[]
+		body: string | null
+		createdAt: string
+	} | null
 }
 
 export interface DiscoveryIntent {

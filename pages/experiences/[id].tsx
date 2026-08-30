@@ -1,9 +1,9 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { CourseWishlistBar } from '@/components/course/CourseWishlistBar'
 import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import { ExperiencePrice } from '@/components/experience/ExperiencePrice'
@@ -18,18 +18,12 @@ const dateTime = (value: string) =>
 		hour: 'numeric',
 		minute: '2-digit',
 	}).format(new Date(value))
-const PENDING_KEY = 'pending-booking'
 
 export default function ExperiencePage() {
 	const router = useRouter(),
-		{ status } = useSession(),
-		resumed = useRef(false),
 		wishlist = useCourseWishlist()
 	const [experience, setExperience] = useState<ExperienceDetail | null>(null),
-		[selectedSlot, setSlot] = useState(''),
-		[error, setError] = useState(''),
-		[booking, setBooking] = useState(false),
-		[loginModal, setLoginModal] = useState(false)
+		[error, setError] = useState('')
 	const safeReturnTo =
 		typeof router.query.returnTo === 'string' &&
 		router.query.returnTo.startsWith('/') &&
@@ -45,67 +39,28 @@ export default function ExperiencePage() {
 				const data = await response.json()
 				if (!response.ok) throw new Error(data.error)
 				setExperience(data)
-				const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null')
-				const requestedSlot = typeof router.query.slotId === 'string' ? router.query.slotId : ''
-				setSlot(
-					data.slots.some((slot: { id: string }) => slot.id === requestedSlot)
-						? requestedSlot
-						: pending?.experienceId === data.id
-							? pending.slotId
-							: data.slots[0]?.id || ''
-				)
 			})
 			.catch((e) => setError(e.message))
 	}, [router.isReady, router.query.id])
 
-	async function submitBooking(slotId = selectedSlot) {
-		if (!experience || !slotId) return
-		setBooking(true)
-		setError('')
-		const intent = JSON.parse(sessionStorage.getItem('discovery-intent') || '{}')
-		const response = await fetch('/api/bookings', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				slotId,
-				desiredEmotion: intent.desiredEmotion || experience.emotions[0],
-				currentState: intent.currentState || null,
-			}),
-		})
-		const data = await response.json()
-		setBooking(false)
-		if (!response.ok) return setError(data.error)
-		sessionStorage.removeItem(PENDING_KEY)
-		const returnTo = courseReturnTo ? `?returnTo=${encodeURIComponent(courseReturnTo)}` : ''
-		await router.push(`/bookings/${data.id}${returnTo}`)
-	}
-
-	useEffect(() => {
-		if (
-			status !== 'authenticated' ||
-			!experience ||
-			router.query.resumeBooking !== '1' ||
-			resumed.current
-		)
-			return
-		const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null')
-		if (pending?.experienceId === experience.id) {
-			resumed.current = true
-			void submitBooking(pending.slotId)
-		}
-	}, [status, experience, router.query.resumeBooking]) // eslint-disable-line react-hooks/exhaustive-deps
-
-	function reserve() {
-		if (!experience || !selectedSlot) return
-		if (status !== 'authenticated') {
+	function createCourse() {
+		if (!experience) return
+		if (!sessionStorage.getItem('discovery-intent')) {
+			const desiredEmotions = experience.emotions.slice(0, 2)
 			sessionStorage.setItem(
-				PENDING_KEY,
-				JSON.stringify({ experienceId: experience.id, slotId: selectedSlot })
+				'discovery-intent',
+				JSON.stringify({
+					desiredEmotion: desiredEmotions[0],
+					desiredEmotions,
+					availableFromMinutes: 0,
+					availableUntilMinutes: 1440,
+					latitude: experience.space.latitude,
+					longitude: experience.space.longitude,
+					maxDistanceKm: 30,
+				})
 			)
-			setLoginModal(true)
-			return
 		}
-		void submitBooking()
+		void router.push('/course')
 	}
 
 	if (!experience)
@@ -140,16 +95,7 @@ export default function ExperiencePage() {
 						)}
 					</div>
 					<p className='mt-8 font-bold text-brand'>{experience.space.name}</p>
-					<div className='mt-2 flex items-start justify-between gap-4'>
-						<h1 className='text-4xl font-black'>{experience.title}</h1>
-						<button
-							type='button'
-							onClick={() => wishlist.toggle(experience.id)}
-							className={`shrink-0 rounded-full px-4 py-2 font-black transition-colors ${wishlist.wishIds.includes(experience.id) ? 'bg-glow text-ink hover:bg-glow/80' : 'btn-secondary'}`}
-						>
-							{wishlist.wishIds.includes(experience.id) ? '★ 잡음' : '☆ 잡기'}
-						</button>
-					</div>
+					<h1 className='mt-2 text-4xl font-black'>{experience.title}</h1>
 					<p className='mt-4 leading-7 text-ink/65'>{experience.description}</p>
 					<div className='mt-5 flex flex-wrap gap-2'>
 						{experience.ambienceTags.map((tag) => (
@@ -165,7 +111,7 @@ export default function ExperiencePage() {
 					</div>
 					{experience.reviews.length > 0 && (
 						<div className='mt-8'>
-							<h2 className='text-2xl font-black'>감정 변화 영수증</h2>
+							<h2 className='text-2xl font-black'>감정 변화</h2>
 							{experience.reviews.map((review) => (
 								<div key={review.id} className='mt-3 rounded-2xl bg-white p-5'>
 									<strong>{emotions.find((e) => e.value === review.afterEmotion)?.label}</strong>
@@ -186,66 +132,43 @@ export default function ExperiencePage() {
 							/>
 						</div>
 						<p className='mt-1 text-sm'>{experience.durationMinutes}분</p>
-						<h2 className='mt-7 font-black'>시작 시간 선택</h2>
+						<h2 className='mt-7 font-black'>지금 잡을 수 있는 시간</h2>
 						<div className='mt-3 space-y-2'>
 							{experience.slots.map((slot) => (
-								<button
-									key={slot.id}
-									onClick={() => setSlot(slot.id)}
-									className={`btn-chip w-full rounded-2xl p-4 text-left ${selectedSlot === slot.id ? 'btn-chip-selected' : ''}`}
-								>
+								<div key={slot.id} className='w-full rounded-2xl bg-paper p-4'>
 									<strong>{dateTime(slot.startsAt)}</strong>
-									<span
-										className={`float-right text-sm ${selectedSlot === slot.id ? 'text-white' : 'text-brand'}`}
-									>
+									<span className='float-right text-sm font-bold text-brand'>
 										{slot.availableSeats}석
 									</span>
-								</button>
+								</div>
 							))}
 						</div>
 						{!experience.slots.length && (
 							<p className='mt-3 text-sm text-ink/50'>예약 가능한 시간이 없습니다.</p>
 						)}
 						<button
-							onClick={reserve}
-							disabled={!selectedSlot || booking}
-							className='btn-primary mt-6 w-full rounded-2xl p-4 font-black'
+							type='button'
+							onClick={() => wishlist.toggle(experience.id)}
+							aria-pressed={wishlist.wishIds.includes(experience.id)}
+							className={`mt-6 w-full rounded-2xl border-2 p-4 font-black transition-all ${
+								wishlist.wishIds.includes(experience.id)
+									? 'border-glow bg-glow text-ink shadow-[0_8px_24px_rgba(248,255,142,0.45)] hover:bg-glow/80'
+									: 'border-sky bg-white text-brand hover:border-action hover:bg-sky/15'
+							}`}
 						>
-							{booking ? '좌석 확인 중…' : '예약하기'}
+							{wishlist.wishIds.includes(experience.id) ? '★ 순간을 잡았어요!' : '☆ 순간을 잡기'}
 						</button>
 						{error && <p className='mt-3 text-sm font-bold text-coral'>{error}</p>}
 					</div>
 				</aside>
 			</article>
-			{loginModal && (
-				<div
-					role='dialog'
-					aria-modal='true'
-					className='fixed inset-0 z-[100] grid place-items-center bg-black/40 p-5'
-				>
-					<div className='w-full max-w-md rounded-[2rem] bg-white p-7 shadow-2xl'>
-						<h2 className='text-2xl font-black'>예약을 저장하려면 계속해 주세요.</h2>
-						<p className='mt-2 text-sm text-ink/55'>잡은 순간과 시간은 그대로 유지됩니다.</p>
-						<Link
-							href={{
-								pathname: '/login',
-								query: {
-									callbackUrl: `${router.asPath}${router.asPath.includes('?') ? '&' : '?'}resumeBooking=1`,
-								},
-							}}
-							className='btn-primary mt-7 w-full rounded-2xl p-4 font-black'
-						>
-							로그인 페이지로 계속하기
-						</Link>
-						<button
-							onClick={() => setLoginModal(false)}
-							className='mt-4 w-full text-sm text-ink/45'
-						>
-							닫기
-						</button>
-					</div>
-				</div>
-			)}
+			<CourseWishlistBar
+				wishIds={wishlist.wishIds}
+				experiences={[experience]}
+				onRemove={wishlist.remove}
+				onClear={wishlist.clear}
+				onCreate={createCourse}
+			/>
 		</AppShell>
 	)
 }

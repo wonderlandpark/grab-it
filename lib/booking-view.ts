@@ -15,7 +15,15 @@ export function bookingView(booking: any) {
 		createdAt: booking.createdAt.toISOString(),
 		cancelledAt: booking.cancelledAt?.toISOString() || null,
 		checkedInAt: booking.checkedInAt?.toISOString() || null,
-		review: booking.review ? { id: booking.review.id } : null,
+		review: booking.review
+			? {
+					id: booking.review.id,
+					afterEmotion: booking.review.afterEmotion,
+					highlightTags: booking.review.highlightTags,
+					body: booking.review.body,
+					createdAt: booking.review.createdAt.toISOString(),
+				}
+			: null,
 		slot: {
 			id: booking.slot.id,
 			startsAt: booking.slot.startsAt.toISOString(),
@@ -40,7 +48,15 @@ export function bookingView(booking: any) {
 }
 
 export const bookingInclude = {
-	review: { select: { id: true } },
+	review: {
+		select: {
+			id: true,
+			afterEmotion: true,
+			highlightTags: true,
+			body: true,
+			createdAt: true,
+		},
+	},
 	slot: {
 		include: { bookings: { select: { status: true } }, experience: { include: { space: true } } },
 	},

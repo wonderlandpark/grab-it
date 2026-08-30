@@ -155,7 +155,7 @@ function toCourse(state: SearchState, candidates: CourseCandidate[]): CourseReco
 }
 
 function omissionReason(candidate: CourseCandidate, state: SearchState) {
-	if (!candidate.slots.length) return '선택한 시간에 남은 좌석이 없어요.'
+	if (!candidate.slots.length) return '선택한 시간에 남은 자리가 없어요.'
 	const overlaps = candidate.slots.every((slot) =>
 		state.items.some(
 			(item) =>

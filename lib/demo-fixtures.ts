@@ -11,6 +11,13 @@ export async function createGuestDemoFixtures(
 	uuid: string,
 	now = new Date()
 ) {
+	const configuredUpcomingStartsAt = new Date(
+		process.env.DEMO_UPCOMING_RESERVATION_AT || '2026-08-31T17:30:00+09:00'
+	)
+	const upcomingStartsAt =
+		configuredUpcomingStartsAt.getTime() > now.getTime()
+			? configuredUpcomingStartsAt
+			: shifted(now, 24 * 60)
 	const suffix = uuid.replaceAll('-', '').slice(0, 12)
 	const spaceId = `guest-space-${suffix}`
 	const experienceId = `guest-experience-${suffix}`
@@ -63,9 +70,9 @@ export async function createGuestDemoFixtures(
 							},
 							{
 								id: openSlotId,
-								startsAt: shifted(now, 180),
-								endsAt: shifted(now, 220),
-								bookingClosesAt: shifted(now, 165),
+								startsAt: upcomingStartsAt,
+								endsAt: shifted(upcomingStartsAt, 40),
+								bookingClosesAt: shifted(upcomingStartsAt, -15),
 								capacity: 3,
 								status: 'OPEN',
 							},
@@ -73,6 +80,19 @@ export async function createGuestDemoFixtures(
 					},
 				},
 			},
+		},
+	})
+
+	await tx.booking.create({
+		data: {
+			id: `guest-upcoming-booking-${suffix}`,
+			slotId: openSlotId,
+			userId,
+			status: 'CONFIRMED',
+			currentState: '마음이 복잡해요',
+			desiredEmotion: 'CALM',
+			qrTokenHash: tokenHash(`upcoming:${uuid}`),
+			createdAt: now,
 		},
 	})
 
