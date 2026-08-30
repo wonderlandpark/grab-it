@@ -9,6 +9,7 @@ import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import MapCanvas from '@/components/map/MapCanvas'
 import { readDiscoveryView, writeDiscoveryView } from '@/lib/course-storage'
+import { emotionArtwork, unsureEmotionArtwork } from '@/lib/emotion-artwork'
 import {
 	currentStates,
 	emotions,
@@ -33,26 +34,6 @@ const inferredEmotion: Record<string, EmotionValue> = {
 	LONELY: 'COMFORT',
 	RESTLESS: 'FOCUS',
 	BORED: 'EXCITEMENT',
-}
-
-const emotionArtwork: Partial<
-	Record<
-		EmotionValue,
-		{
-			src: string
-			placement: 'left' | 'right' | 'both'
-			size: 'small' | 'medium' | 'large'
-		}
-	>
-> = {
-	CALM: { src: '/emotions/calm-stars.svg', placement: 'both', size: 'medium' },
-	REFRESH: { src: '/emotions/refresh-stars.svg', placement: 'right', size: 'large' },
-	EXCITEMENT: { src: '/emotions/excitement-stars.svg', placement: 'both', size: 'medium' },
-	AWE: { src: '/emotions/awe-stars.svg', placement: 'both', size: 'medium' },
-	COMFORT: { src: '/emotions/comfort-stars.svg', placement: 'both', size: 'large' },
-	LIBERATION: { src: '/emotions/liberation-stars.svg', placement: 'right', size: 'large' },
-	FOCUS: { src: '/emotions/focus-stars.svg', placement: 'both', size: 'medium' },
-	ENERGY: { src: '/emotions/energy-stars.svg', placement: 'left', size: 'large' },
 }
 
 const emotionValues = new Set<EmotionValue>(emotions.map((emotion) => emotion.value))
@@ -519,9 +500,9 @@ export default function Home() {
 										))}
 										<EmotionOptionButton
 											label='잘 모르겠어요'
-											artworkSrc='/emotions/unsure-stars.svg'
-											artworkPlacement='right'
-											artworkSize='small'
+											artworkSrc={unsureEmotionArtwork.src}
+											artworkPlacement={unsureEmotionArtwork.placement}
+											artworkSize={unsureEmotionArtwork.size}
 											artworkNudgeDown
 											selected={unsure}
 											dashed
@@ -587,7 +568,7 @@ export default function Home() {
 										<button
 											type='button'
 											onClick={locate}
-											className='btn-secondary w-full rounded-full px-4 py-3 text-sm font-bold md:w-auto'
+											className='btn-secondary w-full rounded-full border-black px-4 py-3 text-sm font-bold md:w-auto'
 										>
 											◎ {locationName}
 										</button>
@@ -596,13 +577,13 @@ export default function Home() {
 												value={locationQuery}
 												onChange={(event) => setLocationQuery(event.target.value)}
 												placeholder='동네·역·장소 검색'
-												className='min-w-0 flex-1 rounded-full border border-action/30 px-4 py-3 text-sm transition focus:border-action focus:ring-2 focus:ring-action/20 md:min-w-48'
+												className='min-w-0 flex-1 rounded-full border border-black px-4 py-3 text-sm transition focus:border-action focus:ring-2 focus:ring-action/20 md:min-w-48'
 											/>
 											<button
 												type='submit'
 												aria-label='지역 검색'
 												title='지역 검색'
-												className='btn-secondary grid h-11 w-11 shrink-0 place-items-center rounded-full p-0'
+												className='btn-secondary grid h-11 w-11 shrink-0 place-items-center rounded-full border-black p-0'
 											>
 												<svg
 													aria-hidden='true'

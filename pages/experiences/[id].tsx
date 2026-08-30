@@ -7,7 +7,14 @@ import { CourseWishlistBar } from '@/components/course/CourseWishlistBar'
 import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import { ExperiencePrice } from '@/components/experience/ExperiencePrice'
-import { emotions, type ExperienceDetail } from '@/types/domain'
+import { readDiscoveryView } from '@/lib/course-storage'
+import { emotionArtwork, representativeEmotion } from '@/lib/emotion-artwork'
+import {
+	emotions,
+	type DiscoveryIntent,
+	type EmotionValue,
+	type ExperienceDetail,
+} from '@/types/domain'
 
 const dateTime = (value: string) =>
 	new Intl.DateTimeFormat('ko-KR', {
@@ -24,6 +31,7 @@ export default function ExperiencePage() {
 		wishlist = useCourseWishlist()
 	const [experience, setExperience] = useState<ExperienceDetail | null>(null),
 		[error, setError] = useState('')
+	const [desiredEmotions, setDesiredEmotions] = useState<EmotionValue[]>([])
 	const safeReturnTo =
 		typeof router.query.returnTo === 'string' &&
 		router.query.returnTo.startsWith('/') &&
@@ -31,6 +39,27 @@ export default function ExperiencePage() {
 			? router.query.returnTo
 			: null
 	const courseReturnTo = safeReturnTo?.startsWith('/course') ? safeReturnTo : null
+
+	useEffect(() => {
+		const viewIntent = readDiscoveryView()?.intent
+		let intent: DiscoveryIntent | null | undefined = viewIntent
+		if (!intent) {
+			try {
+				intent = JSON.parse(
+					sessionStorage.getItem('discovery-intent') || 'null'
+				) as DiscoveryIntent | null
+			} catch {
+				intent = null
+			}
+		}
+		setDesiredEmotions(
+			intent?.desiredEmotions?.length
+				? intent.desiredEmotions
+				: intent?.desiredEmotion
+					? [intent.desiredEmotion]
+					: []
+		)
+	}, [])
 
 	useEffect(() => {
 		if (!router.isReady) return
@@ -69,6 +98,9 @@ export default function ExperiencePage() {
 				<div className='grid min-h-[70vh] place-items-center'>{error || '순간을 불러오는 중…'}</div>
 			</AppShell>
 		)
+	const wished = wishlist.wishIds.includes(experience.id)
+	const representative = representativeEmotion(desiredEmotions, experience.emotions)
+
 	return (
 		<AppShell>
 			<Head>
@@ -149,14 +181,22 @@ export default function ExperiencePage() {
 						<button
 							type='button'
 							onClick={() => wishlist.toggle(experience.id)}
-							aria-pressed={wishlist.wishIds.includes(experience.id)}
-							className={`mt-6 w-full rounded-2xl border-2 p-4 font-black transition-all ${
-								wishlist.wishIds.includes(experience.id)
-									? 'border-glow bg-glow text-ink shadow-[0_8px_24px_rgba(248,255,142,0.45)] hover:bg-glow/80'
+							aria-pressed={wished}
+							className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border-2 p-4 font-black transition-all ${
+								wished
+									? 'border border-black bg-glow text-ink shadow-[0_8px_24px_rgba(248,255,142,0.45)] hover:bg-glow/80'
 									: 'border-sky bg-white text-brand hover:border-action hover:bg-sky/15'
 							}`}
 						>
-							{wishlist.wishIds.includes(experience.id) ? '★ 순간을 잡았어요!' : '☆ 순간을 잡기'}
+							{representative && (
+								<img
+									src={emotionArtwork[representative].src}
+									alt=''
+									aria-hidden='true'
+									className='h-7 w-7 object-contain'
+								/>
+							)}
+							{wished ? '순간을 잡았어요!' : '순간을 잡기'}
 						</button>
 						{error && <p className='mt-3 text-sm font-bold text-coral'>{error}</p>}
 					</div>

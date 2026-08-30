@@ -1,5 +1,5 @@
 export const emotions = [
-	{ value: 'CALM', label: '고요함·편안함', emoji: '🌿' },
+	{ value: 'CALM', label: '고요함', emoji: '🌿' },
 	{ value: 'REFRESH', label: '기분 전환', emoji: '🍊' },
 	{ value: 'EXCITEMENT', label: '설렘', emoji: '💗' },
 	{ value: 'AWE', label: '문화적 자극', emoji: '🌌' },

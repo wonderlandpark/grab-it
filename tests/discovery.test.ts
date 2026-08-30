@@ -1,4 +1,5 @@
 import { distanceFrom, recommendationScore } from '@/lib/discovery'
+import { representativeEmotion } from '@/lib/emotion-artwork'
 
 describe('rule-based discovery', () => {
 	it('gives matching, closer, faster slots a higher score', () => {
@@ -51,5 +52,15 @@ describe('rule-based discovery', () => {
 		const meters = distanceFrom(37.5665, 126.978, 37.5651, 126.98955)
 		expect(meters).toBeGreaterThan(900)
 		expect(meters).toBeLessThan(1200)
+	})
+
+	it('uses the first selected emotion that matches the experience', () => {
+		expect(representativeEmotion(['FOCUS', 'CALM'], ['CALM', 'FOCUS'])).toBe('FOCUS')
+		expect(representativeEmotion(['ENERGY', 'CALM'], ['CALM', 'FOCUS'])).toBe('CALM')
+	})
+
+	it('falls back to the first experience emotion when none match', () => {
+		expect(representativeEmotion(['ENERGY'], ['AWE', 'CALM'])).toBe('AWE')
+		expect(representativeEmotion([], [])).toBeNull()
 	})
 })

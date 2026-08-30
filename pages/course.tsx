@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCourseWishlist } from '@/components/course/useCourseWishlist'
 import { AppShell } from '@/components/layout/AppShell'
 import { readCourseDraft, readDiscoveryView, writeCourseDraft } from '@/lib/course-storage'
-import type { CourseRecommendation, DiscoveryIntent } from '@/types/domain'
+import { emotionArtwork, representativeEmotion } from '@/lib/emotion-artwork'
+import type { CourseRecommendation, DiscoveryIntent, EmotionValue } from '@/types/domain'
 
 const PENDING_COURSE_BOOKING_KEY = 'pending-course-booking:v1'
 
@@ -50,6 +51,7 @@ export default function CoursePage() {
 	const [booking, setBooking] = useState(false)
 	const [bookingError, setBookingError] = useState('')
 	const [loginModal, setLoginModal] = useState(false)
+	const [desiredEmotions, setDesiredEmotions] = useState<EmotionValue[]>([])
 	const candidateIndex =
 		typeof router.query.candidate === 'string' ? Number(router.query.candidate) : null
 	const selectedCourse =
@@ -94,7 +96,17 @@ export default function CoursePage() {
 		}
 	}, [])
 
-	useEffect(() => setReady(true), [])
+	useEffect(() => {
+		const intent = readIntent()
+		setDesiredEmotions(
+			intent?.desiredEmotions?.length
+				? intent.desiredEmotions
+				: intent?.desiredEmotion
+					? [intent.desiredEmotion]
+					: []
+		)
+		setReady(true)
+	}, [])
 	useEffect(() => {
 		if (!ready) return
 		const intent = readIntent()
@@ -173,6 +185,7 @@ export default function CoursePage() {
 					<CourseDetail
 						course={selectedCourse}
 						candidateIndex={candidateIndex!}
+						desiredEmotions={desiredEmotions}
 						onBack={() => void router.replace('/course')}
 						onRemove={removeExperience}
 						onReserve={() => reserveCourse(selectedCourse)}
@@ -211,6 +224,7 @@ export default function CoursePage() {
 										key={course.signature}
 										course={course}
 										best={index === 0}
+										desiredEmotions={desiredEmotions}
 										onOpen={() =>
 											void router.push({ pathname: '/course', query: { candidate: index } })
 										}
@@ -259,10 +273,12 @@ export default function CoursePage() {
 function CourseCard({
 	course,
 	best,
+	desiredEmotions,
 	onOpen,
 }: {
 	course: CourseRecommendation
 	best: boolean
+	desiredEmotions: EmotionValue[]
 	onOpen: () => void
 }) {
 	return (
@@ -277,11 +293,12 @@ function CourseCard({
 			<p className='text-sm font-bold text-brand'>{time(course.startsAt)} 시작</p>
 			<h2 className='mt-2 text-2xl font-black'>{course.items.length}개의 순간을 이은 궤적</h2>
 			<div className='mt-6 flex-1 space-y-4 border-y border-black/5 py-5'>
-				{course.items.map((item, index) => (
+				{course.items.map((item) => (
 					<div key={item.slot.id} className='flex gap-3'>
-						<span className='grid h-7 w-7 shrink-0 place-items-center rounded-full bg-glow text-xs font-black text-ink ring-1 ring-ink/10'>
-							{index + 1}
-						</span>
+						<CourseEmotionMarker
+							desiredEmotions={desiredEmotions}
+							experienceEmotions={item.experience.emotions}
+						/>
 						<div className='min-w-0 pt-0.5'>
 							<strong className='block leading-snug'>{item.experience.title}</strong>
 							<span className='mt-1 block text-xs text-ink/45'>
@@ -323,6 +340,7 @@ function CourseCard({
 function CourseDetail({
 	course,
 	candidateIndex,
+	desiredEmotions,
 	onBack,
 	onRemove,
 	onReserve,
@@ -331,6 +349,7 @@ function CourseDetail({
 }: {
 	course: CourseRecommendation
 	candidateIndex: number
+	desiredEmotions: EmotionValue[]
 	onBack: () => void
 	onRemove: (id: string) => void
 	onReserve: () => void
@@ -350,15 +369,16 @@ function CourseDetail({
 						{course.items.map((item, index) => (
 							<div key={item.slot.id}>
 								<div className='flex items-center gap-3 text-xs font-bold text-brand'>
-									<span className='grid h-7 w-7 place-items-center rounded-full bg-glow text-ink ring-1 ring-ink/10'>
-										{index + 1}
-									</span>
+									<CourseEmotionMarker
+										desiredEmotions={desiredEmotions}
+										experienceEmotions={item.experience.emotions}
+									/>
 									{index === 0
 										? `출발지에서 약 ${item.travelMinutes}분`
 										: `이동·준비 약 ${item.travelMinutes}분`}
 									{item.waitMinutes > 0 && ` · 대기 ${item.waitMinutes}분`}
 								</div>
-								<div className='ml-3.5 border-l-2 border-action/20 py-3 pl-6'>
+								<div className='ml-4 border-l-2 border-action/20 py-3 pl-6'>
 									<p className='text-sm font-bold'>
 										{time(item.slot.startsAt)} ~ {time(item.slot.endsAt)}
 									</p>
@@ -434,6 +454,26 @@ function CourseDetail({
 				</aside>
 			</div>
 		</>
+	)
+}
+
+function CourseEmotionMarker({
+	desiredEmotions,
+	experienceEmotions,
+}: {
+	desiredEmotions: EmotionValue[]
+	experienceEmotions: EmotionValue[]
+}) {
+	const emotion = representativeEmotion(desiredEmotions, experienceEmotions)
+
+	return (
+		<span className='grid h-8 w-8 shrink-0 place-items-center' aria-hidden='true'>
+			{emotion ? (
+				<img src={emotionArtwork[emotion].src} alt='' className='h-7 w-7 object-contain' />
+			) : (
+				<span className='h-2 w-2 rounded-full bg-ink/30' />
+			)}
+		</span>
 	)
 }
 

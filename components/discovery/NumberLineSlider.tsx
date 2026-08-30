@@ -22,7 +22,7 @@ export function NumberLineSlider({
 		options.findIndex((option) => option.value === value)
 	)
 	return (
-		<fieldset className='rounded-2xl border border-action/25 bg-paper/45 p-5'>
+		<fieldset className='rounded-2xl border-2 border-black bg-paper/45 p-5'>
 			<legend className='sr-only'>{label}</legend>
 			<div className='flex items-center justify-between gap-3'>
 				<span className='font-black'>{label}</span>
@@ -108,7 +108,7 @@ export function ActivityTimeRange({
 	} as CSSProperties
 
 	return (
-		<fieldset className='rounded-2xl border border-action/25 bg-paper/45 p-5 md:p-6'>
+		<fieldset className='rounded-2xl border-2 border-black bg-paper/45 p-5 md:p-6'>
 			<legend className='sr-only'>오늘 순간을 보낼 수 있는 시간대</legend>
 			<div className='flex flex-wrap items-center justify-between gap-3'>
 				<span className='font-black'>오늘 언제 시간이 있나요?</span>

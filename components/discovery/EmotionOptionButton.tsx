@@ -25,7 +25,7 @@ export function EmotionOptionButton({
 		<button
 			type='button'
 			aria-pressed={selected}
-			className={`relative h-24 min-w-0 overflow-hidden rounded-[50%] px-3 text-center md:h-28 md:px-8 ${
+			className={`relative h-24 min-w-0 overflow-hidden rounded-[50%] border-[3px] border-ink px-3 text-center md:h-28 md:px-8 ${
 				selected
 					? 'btn-chip btn-chip-selected shadow-md'
 					: dashed
