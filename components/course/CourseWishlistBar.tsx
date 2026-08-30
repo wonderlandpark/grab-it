@@ -70,6 +70,7 @@ export function CourseWishlistBar({
 
 	return (
 		<>
+			<div aria-hidden='true' className='h-28 md:hidden' />
 			<div className='fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-xl items-center gap-2 rounded-2xl bg-ink p-3 text-white shadow-2xl md:bottom-5'>
 				<button
 					onClick={() => setOpen(true)}
