@@ -99,7 +99,7 @@ export default function Me() {
 				)}
 				<section className='mt-10'>
 					<div className='flex items-center justify-between'>
-						<h2 className='text-2xl font-black'>예정 순간</h2>
+						<h2 className='text-2xl font-black'>다가올 순간</h2>
 						<Link href='/partner' className='text-sm font-bold text-brand hover:text-brand/80'>
 							내 공간 관리 →
 						</Link>
@@ -120,7 +120,7 @@ export default function Me() {
 					</div>
 				</section>
 				<section className='mt-10'>
-					<h2 className='text-2xl font-black'>지난 순간</h2>
+					<h2 className='text-2xl font-black'>지나간 순간</h2>
 					<div className='mt-4 space-y-3'>
 						{pastGroups.map((group) =>
 							group.courseGroupId ? (
