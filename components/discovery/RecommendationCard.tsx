@@ -20,6 +20,7 @@ export function RecommendationCard({
 	onOpen,
 	returnTo,
 	desiredEmotions = [],
+	highlightEmotionMatch = true,
 }: {
 	experience: ExperienceRecommendation
 	rank?: number
@@ -28,6 +29,7 @@ export function RecommendationCard({
 	onOpen?: () => void
 	returnTo?: string
 	desiredEmotions?: EmotionValue[]
+	highlightEmotionMatch?: boolean
 }) {
 	const matchedEmotions = desiredEmotions.filter((emotion) => experience.emotions.includes(emotion))
 	const displayedEmotions = matchedEmotions.length
@@ -41,7 +43,7 @@ export function RecommendationCard({
 	const startsSoon = startsInMinutes <= 180
 
 	return (
-		<article className='group relative overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg'>
+		<article className='group relative overflow-hidden rounded-3xl border border-action/25 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg'>
 			<button
 				type='button'
 				onClick={onToggleWish}
@@ -61,7 +63,11 @@ export function RecommendationCard({
 				<div className='flex min-h-36 flex-col justify-between bg-gradient-to-br from-mist to-white p-5'>
 					<div className='flex items-center justify-between gap-3 text-xs font-bold text-brand'>
 						<span
-							className={matchedEmotions.length ? 'rounded-full bg-glow px-2.5 py-1 text-ink' : ''}
+							className={
+								matchedEmotions.length && highlightEmotionMatch
+									? 'rounded-full bg-glow px-2.5 py-1 text-ink'
+									: ''
+							}
 						>
 							{rank ? `추천 ${rank}` : emotionLabel}
 						</span>

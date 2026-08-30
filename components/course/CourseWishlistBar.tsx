@@ -70,7 +70,7 @@ export function CourseWishlistBar({
 
 	return (
 		<>
-			<div aria-hidden='true' className='h-28 md:hidden' />
+			<div aria-hidden='true' className='h-28' />
 			<div className='fixed inset-x-4 bottom-20 z-40 mx-auto flex max-w-xl items-center gap-2 rounded-2xl bg-ink p-3 text-white shadow-2xl md:bottom-5'>
 				<button
 					onClick={() => setOpen(true)}
@@ -99,7 +99,7 @@ export function CourseWishlistBar({
 						<div className='mx-auto max-w-2xl'>
 							<div className='flex items-center justify-between'>
 								<h2 className='text-2xl font-black'>
-									<span className='mr-2 text-brand'>★</span>
+									<span className='mr-2 text-glow'>★</span>
 									잡은 순간 {wishIds.length}개
 								</h2>
 								<button

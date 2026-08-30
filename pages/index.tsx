@@ -35,6 +35,26 @@ const inferredEmotion: Record<string, EmotionValue> = {
 	BORED: 'EXCITEMENT',
 }
 
+const emotionArtwork: Partial<
+	Record<
+		EmotionValue,
+		{
+			src: string
+			placement: 'left' | 'right' | 'both'
+			size: 'small' | 'medium' | 'large'
+		}
+	>
+> = {
+	CALM: { src: '/emotions/calm-stars.svg', placement: 'both', size: 'medium' },
+	REFRESH: { src: '/emotions/refresh-stars.svg', placement: 'right', size: 'large' },
+	EXCITEMENT: { src: '/emotions/excitement-stars.svg', placement: 'both', size: 'medium' },
+	AWE: { src: '/emotions/awe-stars.svg', placement: 'both', size: 'medium' },
+	COMFORT: { src: '/emotions/comfort-stars.svg', placement: 'both', size: 'large' },
+	LIBERATION: { src: '/emotions/liberation-stars.svg', placement: 'right', size: 'large' },
+	FOCUS: { src: '/emotions/focus-stars.svg', placement: 'both', size: 'medium' },
+	ENERGY: { src: '/emotions/energy-stars.svg', placement: 'left', size: 'large' },
+}
+
 const emotionValues = new Set<EmotionValue>(emotions.map((emotion) => emotion.value))
 
 function parseDesiredEmotions(
@@ -429,7 +449,7 @@ export default function Home() {
 			</Head>
 			<section className='light-hero px-5 py-14 md:py-24'>
 				<div className='mx-auto max-w-5xl'>
-					<p className='mb-1 text-lg font-black tracking-tight text-ink'>grabit</p>
+					<p className='mb-1 text-xl font-black tracking-tight text-ink'>grabit</p>
 					{/* <p className='mb-3 font-bold text-brand'>
 						검색하다 지치기 전에, 지금의 나에게 맞는 오늘의 움직임
 					</p> */}
@@ -476,6 +496,9 @@ export default function Home() {
 											<EmotionOptionButton
 												key={item.value}
 												label={item.label}
+												artworkSrc={emotionArtwork[item.value]?.src}
+												artworkPlacement={emotionArtwork[item.value]?.placement}
+												artworkSize={emotionArtwork[item.value]?.size}
 												selected={!unsure && desiredEmotions.includes(item.value)}
 												onClick={() => {
 													if (desiredEmotions.includes(item.value)) {
@@ -496,6 +519,10 @@ export default function Home() {
 										))}
 										<EmotionOptionButton
 											label='잘 모르겠어요'
+											artworkSrc='/emotions/unsure-stars.svg'
+											artworkPlacement='right'
+											artworkSize='small'
+											artworkNudgeDown
 											selected={unsure}
 											dashed
 											className='col-span-2 md:col-span-1'
@@ -573,9 +600,21 @@ export default function Home() {
 											/>
 											<button
 												type='submit'
-												className='btn-secondary shrink-0 rounded-full px-4 py-3 text-sm font-bold'
+												aria-label='지역 검색'
+												title='지역 검색'
+												className='btn-secondary grid h-11 w-11 shrink-0 place-items-center rounded-full p-0'
 											>
-												검색
+												<svg
+													aria-hidden='true'
+													viewBox='0 0 24 24'
+													className='h-5 w-5'
+													fill='none'
+													stroke='currentColor'
+													strokeWidth='2'
+												>
+													<circle cx='11' cy='11' r='7' />
+													<path d='m16 16 4 4' strokeLinecap='round' />
+												</svg>
 											</button>
 										</div>
 										<button
@@ -673,6 +712,7 @@ export default function Home() {
 									experience={item}
 									wished={wishlist.wishIds.includes(item.id)}
 									desiredEmotions={desiredEmotions}
+									highlightEmotionMatch={!unsure}
 									onToggleWish={() => wishlist.toggle(item.id)}
 									onOpen={rememberDiscoveryView}
 									returnTo={router.asPath}
