@@ -497,6 +497,7 @@ export default function Home() {
 											label='잘 모르겠어요'
 											selected={unsure}
 											dashed
+											className='col-span-2 md:col-span-1'
 											onClick={() => {
 												setUnsure(true)
 												setDesiredEmotions([])
@@ -553,27 +554,29 @@ export default function Home() {
 											event.preventDefault()
 											void searchLocation()
 										}}
-										className='flex flex-wrap items-center gap-3'
+										className='flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center'
 									>
 										<button
 											type='button'
 											onClick={locate}
-											className='btn-secondary rounded-full px-4 py-3 text-sm font-bold'
+											className='btn-secondary w-full rounded-full px-4 py-3 text-sm font-bold md:w-auto'
 										>
 											◎ {locationName}
 										</button>
-										<input
-											value={locationQuery}
-											onChange={(event) => setLocationQuery(event.target.value)}
-											placeholder='동네·역·장소 검색'
-											className='min-w-48 flex-1 rounded-full border border-action/30 px-4 py-3 text-sm transition focus:border-action focus:ring-2 focus:ring-action/20'
-										/>
-										<button
-											type='submit'
-											className='btn-secondary rounded-full px-4 py-3 text-sm font-bold'
-										>
-											검색
-										</button>
+										<div className='flex min-w-0 gap-3 md:contents'>
+											<input
+												value={locationQuery}
+												onChange={(event) => setLocationQuery(event.target.value)}
+												placeholder='동네·역·장소 검색'
+												className='min-w-0 flex-1 rounded-full border border-action/30 px-4 py-3 text-sm transition focus:border-action focus:ring-2 focus:ring-action/20 md:min-w-48'
+											/>
+											<button
+												type='submit'
+												className='btn-secondary shrink-0 rounded-full px-4 py-3 text-sm font-bold'
+											>
+												검색
+											</button>
+										</div>
 										<button
 											type='button'
 											onClick={discover}
@@ -631,61 +634,66 @@ export default function Home() {
 				</div>
 			</section>
 			{results && (
-				<section id='results' className='mx-auto max-w-6xl px-5 py-16'>
-					<div className='flex flex-wrap items-end justify-between gap-4'>
-						<div>
-							<p className='font-bold text-brand'>지금 예약할 수 있어요</p>
-							<h2 className='mt-1 text-3xl font-black'>지금 가능한 순간 {results.total}개</h2>
-							<p className='mt-2 text-sm text-ink/55'>별을 눌러 마음에 드는 순간을 잡아 보세요.</p>
+				<section id='results' className='px-5 py-16'>
+					<div className='mx-auto max-w-5xl'>
+						<div className='flex flex-wrap items-end justify-between gap-4'>
+							<div>
+								<p className='font-bold text-brand'>지금 예약할 수 있어요</p>
+								<h2 className='mt-1 text-3xl font-black'>지금 가능한 순간 {results.total}개</h2>
+								<p className='mt-2 text-sm text-ink/55'>
+									별을 눌러 마음에 드는 순간을 잡아 보세요.
+								</p>
+							</div>
+							<button
+								onClick={() => setShowMap(!showMap)}
+								className='btn-secondary rounded-full px-4 py-2 font-bold'
+							>
+								{showMap ? '지도 접기' : '지도에서 보기'}
+							</button>
 						</div>
-						<button
-							onClick={() => setShowMap(!showMap)}
-							className='btn-secondary rounded-full px-4 py-2 font-bold'
-						>
-							{showMap ? '지도 접기' : '지도에서 보기'}
-						</button>
+						{showMap && (
+							<div className='mt-8'>
+								<MapCanvas
+									experiences={results.items}
+									onSelect={(item) => {
+										rememberDiscoveryView()
+										void router.push({
+											pathname: `/experiences/${item.id}`,
+											query: { returnTo: router.asPath },
+										})
+									}}
+								/>
+							</div>
+						)}
+						<div className='mt-8 grid gap-5 md:grid-cols-3'>
+							{results.items.map((item) => (
+								<RecommendationCard
+									key={item.id}
+									experience={item}
+									wished={wishlist.wishIds.includes(item.id)}
+									desiredEmotions={desiredEmotions}
+									onToggleWish={() => wishlist.toggle(item.id)}
+									onOpen={rememberDiscoveryView}
+									returnTo={router.asPath}
+								/>
+							))}
+						</div>
+						{!results.items.length && (
+							<div className='mt-8 rounded-3xl bg-white p-10 text-center'>
+								<h3 className='font-black'>조건에 맞는 빈자리가 아직 없어요.</h3>
+								<p className='mt-2 text-ink/60'>거리나 가능한 시간대를 넓혀 다시 찾아보세요.</p>
+							</div>
+						)}
+						{results.items.length > 0 && (
+							<div ref={resultSentinel} className='py-8 text-center text-sm text-ink/50'>
+								{loadingMore
+									? '다음 순간을 불러오는 중…'
+									: results.nextOffset === null
+										? '조건에 맞는 순간을 모두 확인했어요.'
+										: '아래로 내리면 더 보여드려요.'}
+							</div>
+						)}
 					</div>
-					{showMap && (
-						<div className='mt-8'>
-							<MapCanvas
-								experiences={results.items}
-								onSelect={(item) => {
-									rememberDiscoveryView()
-									void router.push({
-										pathname: `/experiences/${item.id}`,
-										query: { returnTo: router.asPath },
-									})
-								}}
-							/>
-						</div>
-					)}
-					<div className='mt-8 grid gap-5 md:grid-cols-3'>
-						{results.items.map((item) => (
-							<RecommendationCard
-								key={item.id}
-								experience={item}
-								wished={wishlist.wishIds.includes(item.id)}
-								onToggleWish={() => wishlist.toggle(item.id)}
-								onOpen={rememberDiscoveryView}
-								returnTo={router.asPath}
-							/>
-						))}
-					</div>
-					{!results.items.length && (
-						<div className='mt-8 rounded-3xl bg-white p-10 text-center'>
-							<h3 className='font-black'>조건에 맞는 빈자리가 아직 없어요.</h3>
-							<p className='mt-2 text-ink/60'>거리나 가능한 시간대를 넓혀 다시 찾아보세요.</p>
-						</div>
-					)}
-					{results.items.length > 0 && (
-						<div ref={resultSentinel} className='py-8 text-center text-sm text-ink/50'>
-							{loadingMore
-								? '다음 순간을 불러오는 중…'
-								: results.nextOffset === null
-									? '조건에 맞는 순간을 모두 확인했어요.'
-									: '아래로 내리면 더 보여드려요.'}
-						</div>
-					)}
 				</section>
 			)}
 			<CourseWishlistBar

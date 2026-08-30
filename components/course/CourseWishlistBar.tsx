@@ -73,6 +73,7 @@ export function CourseWishlistBar({
 					onClick={() => setOpen(true)}
 					className='min-w-0 flex-1 rounded-xl px-2 py-2 text-left font-black transition-colors hover:bg-white/10'
 				>
+					<span className='mr-1.5 text-glow'>★</span>
 					잡은 순간 {wishIds.length}개
 					<span className='ml-2 text-sm font-normal text-white/60'>잡은 목록</span>
 				</button>
@@ -94,7 +95,10 @@ export function CourseWishlistBar({
 					>
 						<div className='mx-auto max-w-2xl'>
 							<div className='flex items-center justify-between'>
-								<h2 className='text-2xl font-black'>잡은 순간 {wishIds.length}개</h2>
+								<h2 className='text-2xl font-black'>
+									<span className='mr-2 text-brand'>★</span>
+									잡은 순간 {wishIds.length}개
+								</h2>
 								<button
 									onClick={onClear}
 									className='btn-ghost rounded-lg px-2 py-1 text-sm underline'

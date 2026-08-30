@@ -190,7 +190,7 @@ function CourseCard({
 			<div className='mt-6 flex-1 space-y-4 border-y border-black/5 py-5'>
 				{course.items.map((item, index) => (
 					<div key={item.slot.id} className='flex gap-3'>
-						<span className='grid h-7 w-7 shrink-0 place-items-center rounded-full bg-mist text-xs font-black text-brand'>
+						<span className='grid h-7 w-7 shrink-0 place-items-center rounded-full bg-glow text-xs font-black text-ink ring-1 ring-ink/10'>
 							{index + 1}
 						</span>
 						<div className='min-w-0 pt-0.5'>
@@ -211,7 +211,7 @@ function CourseCard({
 					{course.totalPriceWon === 0 ? '무료' : `${course.totalPriceWon.toLocaleString()}원`}
 				</span>
 				{course.totalDiscountWon > 0 && (
-					<span className='rounded-full bg-glow/60 px-3 py-2 font-bold text-ink'>
+					<span className='rounded-full bg-mist px-3 py-2 font-bold text-brand'>
 						{course.totalDiscountWon.toLocaleString()}원 할인
 					</span>
 				)}
@@ -255,7 +255,7 @@ function CourseDetail({
 						{course.items.map((item, index) => (
 							<div key={item.slot.id}>
 								<div className='flex items-center gap-3 text-xs font-bold text-brand'>
-									<span className='grid h-7 w-7 place-items-center rounded-full bg-action text-white'>
+									<span className='grid h-7 w-7 place-items-center rounded-full bg-glow text-ink ring-1 ring-ink/10'>
 										{index + 1}
 									</span>
 									{index === 0
@@ -263,7 +263,7 @@ function CourseDetail({
 										: `이동·준비 약 ${item.travelMinutes}분`}
 									{item.waitMinutes > 0 && ` · 대기 ${item.waitMinutes}분`}
 								</div>
-								<div className='ml-3.5 border-l-2 border-mist py-3 pl-6'>
+								<div className='ml-3.5 border-l-2 border-action/20 py-3 pl-6'>
 									<p className='text-sm font-bold'>
 										{time(item.slot.startsAt)} ~ {time(item.slot.endsAt)}
 									</p>

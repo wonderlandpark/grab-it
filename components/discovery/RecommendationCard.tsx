@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ExperiencePrice } from '@/components/experience/ExperiencePrice'
-import { emotions, type ExperienceRecommendation } from '@/types/domain'
+import { emotions, type EmotionValue, type ExperienceRecommendation } from '@/types/domain'
 
 const time = (value: string) =>
 	new Intl.DateTimeFormat('ko-KR', {
@@ -8,6 +8,10 @@ const time = (value: string) =>
 		hour: 'numeric',
 		minute: '2-digit',
 	}).format(new Date(value))
+
+const minutesUntil = (value: string) =>
+	Math.max(1, Math.ceil((new Date(value).getTime() - Date.now()) / 60000))
+
 export function RecommendationCard({
 	experience,
 	rank,
@@ -15,6 +19,7 @@ export function RecommendationCard({
 	onToggleWish,
 	onOpen,
 	returnTo,
+	desiredEmotions = [],
 }: {
 	experience: ExperienceRecommendation
 	rank?: number
@@ -22,8 +27,19 @@ export function RecommendationCard({
 	onToggleWish?: () => void
 	onOpen?: () => void
 	returnTo?: string
+	desiredEmotions?: EmotionValue[]
 }) {
-	const emotionLabel = emotions.find((item) => item.value === experience.emotions[0])?.label
+	const matchedEmotions = desiredEmotions.filter((emotion) => experience.emotions.includes(emotion))
+	const displayedEmotions = matchedEmotions.length
+		? matchedEmotions
+		: experience.emotions.slice(0, 1)
+	const emotionLabel = displayedEmotions
+		.map((emotion) => emotions.find((item) => item.value === emotion)?.label)
+		.filter(Boolean)
+		.join(' · ')
+	const startsInMinutes = minutesUntil(experience.nextSlot.startsAt)
+	const startsSoon = startsInMinutes <= 180
+
 	return (
 		<article className='group relative overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg'>
 			<button
@@ -43,8 +59,12 @@ export function RecommendationCard({
 				className='block'
 			>
 				<div className='flex min-h-36 flex-col justify-between bg-gradient-to-br from-mist to-white p-5'>
-					<div className='flex items-center justify-between text-xs font-bold text-brand'>
-						<span>{rank ? `추천 ${rank}` : emotionLabel}</span>
+					<div className='flex items-center justify-between gap-3 text-xs font-bold text-brand'>
+						<span
+							className={matchedEmotions.length ? 'rounded-full bg-glow px-2.5 py-1 text-ink' : ''}
+						>
+							{rank ? `추천 ${rank}` : emotionLabel}
+						</span>
 						<span>{Math.round(experience.space.distanceMeters / 100) / 10}km</span>
 					</div>
 					<div>
@@ -62,8 +82,15 @@ export function RecommendationCard({
 					</div>
 					<div className='mt-4 flex items-end justify-between'>
 						<div>
-							<p className='font-bold'>
-								{time(experience.nextSlot.startsAt)} · {experience.durationMinutes}분
+							<p className='flex flex-wrap items-center gap-x-2 gap-y-1 font-bold'>
+								<span>
+									{time(experience.nextSlot.startsAt)} · {experience.durationMinutes}분
+								</span>
+								{startsSoon && (
+									<span className='text-xs text-brand md:basis-full'>
+										{startsInMinutes}분 뒤 시작
+									</span>
+								)}
 							</p>
 							<p className='text-xs text-brand'>{experience.nextSlot.availableSeats}자리 남음</p>
 						</div>

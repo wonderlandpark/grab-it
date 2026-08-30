@@ -4,14 +4,12 @@
 
 @layer components {
 	.light-hero {
-		background:
-			radial-gradient(circle at 85% 8%, theme('colors.glow') 0, transparent 30%),
-			linear-gradient(
-				to bottom,
-				theme('colors.sky') 0%,
-				theme('colors.mist') 52%,
-				theme('colors.paper') 100%
-			);
+		background: linear-gradient(
+			to bottom,
+			theme('colors.sky') 0%,
+			theme('colors.mist') 52%,
+			theme('colors.paper') 100%
+		);
 	}
 
 	.btn-primary {
