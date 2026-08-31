@@ -340,10 +340,10 @@ const seeds = [
 	},
 ]
 
-// 발표 시간대에는 사용자가 어떤 경험을 골라도 다음 슬롯으로 이어 붙일 수 있도록
-// 모든 경험에 90분 간격의 후보를 제공한다. 경험마다 0~20분의 차이를 둬 목록이
-// 한 시각에 몰려 보이지 않게 하고, 좌석 수도 1~8석 사이에서 다양하게 만든다.
-const demoSlotBases = [180, 270, 360, 450, 540, 630]
+// 기본 3시간 검색만으로도 결과가 나오고, 어떤 경험을 골라도 다음 슬롯으로
+// 이어 붙일 수 있도록 30분 뒤부터 90분 간격의 후보를 제공한다. 경험마다
+// 0~20분의 차이를 두고 좌석 수도 1~8석 사이에서 다양하게 만든다.
+const demoSlotBases = [30, 120, 210, 300, 390, 480, 570, 660]
 seeds.forEach((seed, seedIndex) => {
 	const minuteNudge = (seedIndex % 5) * 5
 	seed.slots = demoSlotBases.map((base, slotIndex) => [
@@ -485,7 +485,8 @@ async function main() {
 		await prisma.experienceEmotion.createMany({
 			data: seed.emotions.map((emotion) => ({ experienceId, emotion })),
 		})
-		await prisma.slot.deleteMany({ where: { experienceId } })
+		// 이미 체험자가 예약한 슬롯은 유지하고, 예약이 없는 공개 시연 슬롯만 갱신한다.
+		await prisma.slot.deleteMany({ where: { experienceId, bookings: { none: {} } } })
 		await prisma.slot.createMany({
 			data: seed.slots.map(([offset, capacity], index) => {
 				const startsAt = afterMinutes(offset)
@@ -499,6 +500,7 @@ async function main() {
 					status: 'OPEN',
 				}
 			}),
+			skipDuplicates: true,
 		})
 	}
 
