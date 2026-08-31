@@ -341,9 +341,9 @@ const seeds = [
 ]
 
 // 기본 3시간 검색만으로도 결과가 나오고, 어떤 경험을 골라도 다음 슬롯으로
-// 이어 붙일 수 있도록 30분 뒤부터 90분 간격의 후보를 제공한다. 경험마다
+// 이어 붙일 수 있도록 30분 뒤부터 60분 간격의 후보를 제공한다. 경험마다
 // 0~20분의 차이를 두고 좌석 수도 1~8석 사이에서 다양하게 만든다.
-const demoSlotBases = [30, 120, 210, 300, 390, 480, 570, 660]
+const demoSlotBases = [30, 90, 150, 210, 270, 330, 390, 450, 510, 570, 630, 690]
 seeds.forEach((seed, seedIndex) => {
 	const minuteNudge = (seedIndex % 5) * 5
 	seed.slots = demoSlotBases.map((base, slotIndex) => [

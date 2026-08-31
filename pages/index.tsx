@@ -69,7 +69,7 @@ export default function Home() {
 	const [desiredEmotions, setDesiredEmotions] = useState<EmotionValue[]>([])
 	const [unsure, setUnsure] = useState(false)
 	const [availableFromMinutes, setAvailableFrom] = useState(0)
-	const [availableUntilMinutes, setAvailableUntil] = useState(360)
+	const [availableUntilMinutes, setAvailableUntil] = useState(180)
 	const [maxDistanceKm, setDistance] = useState(3)
 	const [location, setLocation] = useState(FALLBACK_LOCATION)
 	const [locationName, setLocationName] = useState('위치 확인 중…')
@@ -216,7 +216,7 @@ export default function Home() {
 	useEffect(() => {
 		if (!queryReady) return
 		const desired = parseDesiredEmotions(router.query.desiredEmotions, router.query.desiredEmotion)
-		const legacyWindow = Number(router.query.startWithinMinutes || 360)
+		const legacyWindow = Number(router.query.startWithinMinutes || 180)
 		const nextFrom = Number(router.query.availableFromMinutes || 0)
 		const nextUntil = Number(router.query.availableUntilMinutes || legacyWindow)
 		const nextDistance = Number(router.query.maxDistanceKm || 3)
